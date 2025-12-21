@@ -14,15 +14,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Service
 public class ProductServiceImpl implements ProductService {
 
-    @Value("${images.folderPath}")
-    private String imagesFolderPath;
+    @Value("${images.products.folder}")
+    private String productsImageFolder;
+    @Value("${images.products.placeholder}")
+    private String placeholderImageName;
     @Autowired
     private ProductRepository productRepository;
     @Autowired
@@ -46,6 +48,7 @@ public class ProductServiceImpl implements ProductService {
         product.setGtin(productDto.getGtin());
         product.setName(productDto.getName());
         product.setDescription(productDto.getDescription());
+        product.setImagePath(Paths.get(productsImageFolder, placeholderImageName).toString());
         product.setUnitPrice(productDto.getUnitPrice());
         product.setMarkDown(productDto.getMarkDown());
         product.setUpdateUser(productDto.getUpdateUser());
@@ -108,7 +111,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductDto uploadProductImage(String productId, MultipartFile image) throws IOException {
         Product product = getProductById(productId);
 
-        String imageFilePath = fileService.uploadProductImage(imagesFolderPath, image, productId);
+        String imageFilePath = fileService.uploadProductImage(productsImageFolder, image, productId);
         product.setImagePath(imageFilePath);
 
         Product saved = productRepository.save(product);
