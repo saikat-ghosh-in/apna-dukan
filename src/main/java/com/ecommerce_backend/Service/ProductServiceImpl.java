@@ -45,6 +45,7 @@ public class ProductServiceImpl implements ProductService {
         product.setProductId(productDto.getProductId());
         product.setGtin(productDto.getGtin());
         product.setName(productDto.getName());
+        product.setDescription(productDto.getDescription());
         product.setUnitPrice(productDto.getUnitPrice());
         product.setMarkDown(productDto.getMarkDown());
         product.setUpdateUser(productDto.getUpdateUser());
@@ -86,6 +87,7 @@ public class ProductServiceImpl implements ProductService {
 
         product.setGtin(gtin);
         product.setName(productDto.getName());
+        product.setDescription(productDto.getDescription());
         product.setUnitPrice(productDto.getUnitPrice());
         product.setMarkDown(productDto.getMarkDown());
         product.setUpdateUser(productDto.getUpdateUser());

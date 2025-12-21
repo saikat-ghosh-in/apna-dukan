@@ -41,6 +41,8 @@ public class GlobalExceptionHandler {
                 message = "productId must be more than 4 characters";
             } else if (cause.contains("check_name_min_len")) {
                 message = "Product name must be more than 3 characters";
+            } else if (cause.contains("check_description_min_len")) {
+                message = "Product description must be more than 6 characters";
             } else if (cause.contains("check_unit_price_min")) {
                 message = "Product unitPrice must be greater than 0";
             } else if (cause.contains("check_mark_down_range")) {
