@@ -5,11 +5,16 @@ import com.ecommerce_backend.Entity.Product;
 import com.ecommerce_backend.ExceptionHandler.ResourceAlreadyExistsException;
 import com.ecommerce_backend.ExceptionHandler.ResourceNotFoundException;
 import com.ecommerce_backend.Payloads.ProductDto;
+import com.ecommerce_backend.Payloads.ProductResponse;
 import com.ecommerce_backend.Repository.ProductRepository;
 import com.ecommerce_backend.Utils.FileService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -60,11 +65,26 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ProductDto> getProducts() {
-        List<Product> products = productRepository.findAll();
-        return products.stream()
-                .map(product -> modelMapper.map(product, ProductDto.class))
+    public ProductResponse getProducts(Integer pageNumber, Integer pageSize, String sortBy, String sortingOrder) {
+        Sort sort = sortingOrder.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+        Pageable pageDetails = PageRequest.of(pageNumber, pageSize, sort);
+
+        Page<Product> productsPage = productRepository.findAll(pageDetails);
+        List<Product> products = productsPage.getContent();
+        List<ProductDto> productDtoList = products.stream()
+                .map(category -> modelMapper.map(category, ProductDto.class))
                 .toList();
+
+        return ProductResponse.builder()
+                .content(productDtoList)
+                .pageNumber(productsPage.getNumber())
+                .pageSize(productsPage.getSize())
+                .totalElements(productsPage.getTotalElements())
+                .totalPages(productsPage.getTotalPages())
+                .lastPage(productsPage.isLast())
+                .build();
     }
 
     @Override

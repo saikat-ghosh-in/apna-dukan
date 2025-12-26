@@ -1,6 +1,8 @@
 package com.ecommerce_backend.Controller;
 
+import com.ecommerce_backend.Configuration.AppConstants;
 import com.ecommerce_backend.Payloads.ProductDto;
+import com.ecommerce_backend.Payloads.ProductResponse;
 import com.ecommerce_backend.Service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,9 +26,12 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductDto>> getAllProducts() {
-        List<ProductDto> productDtoList = productService.getProducts();
-        return new ResponseEntity<>(productDtoList, HttpStatus.OK);
+    public ResponseEntity<ProductResponse> getAllProducts(@RequestParam(defaultValue = AppConstants.PAGE_NUMBER) Integer pageNumber,
+                                                           @RequestParam(defaultValue = AppConstants.PAGE_SIZE) Integer pageSize,
+                                                           @RequestParam(defaultValue = AppConstants.SORT_PRODUCTS_BY) String sortBy,
+                                                           @RequestParam(defaultValue = AppConstants.SORTING_ORDER) String sortingOrder) {
+        ProductResponse productResponse = productService.getProducts(pageNumber, pageSize, sortBy, sortingOrder);
+        return new ResponseEntity<>(productResponse, HttpStatus.OK);
     }
 
     @GetMapping("/{productId}")
