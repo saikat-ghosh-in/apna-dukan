@@ -5,7 +5,7 @@ import com.mercato.Payloads.Response.PaymentResponseDTO;
 
 public class PaymentMapper {
 
-    public static PaymentResponseDTO toDto(Payment payment) {
+    public static PaymentResponseDTO toDTO(Payment payment) {
         return new PaymentResponseDTO(
                 payment.getPaymentId(),
                 payment.getAmount(),

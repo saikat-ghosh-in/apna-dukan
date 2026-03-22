@@ -54,7 +54,7 @@ public class CartServiceImpl implements CartService {
 
         cartPricingService.applyCharges(cart);
         cartRepository.save(cart);
-        return CartMapper.toDto(cart);
+        return CartMapper.toDTO(cart);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class CartServiceImpl implements CartService {
     public CartResponseDTO getCart(CartContext context) {
         Cart cart = resolveCart(context);
         cartPricingService.applyCharges(cart);
-        return CartMapper.toDto(cart);
+        return CartMapper.toDTO(cart);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class CartServiceImpl implements CartService {
             throw new IllegalArgumentException("Quantity cannot be less than 0");
         if (dto.getQuantity() == 0) {
             deleteProductFromCart(dto.getProductId(), context);
-            return CartMapper.toDto(resolveCart(context));
+            return CartMapper.toDTO(resolveCart(context));
         }
 
         Cart cart = resolveCart(context);
@@ -83,7 +83,7 @@ public class CartServiceImpl implements CartService {
 
         cartPricingService.applyCharges(cart);
         cartRepository.save(cart);
-        return CartMapper.toDto(cart);
+        return CartMapper.toDTO(cart);
     }
 
     @Override
@@ -162,7 +162,7 @@ public class CartServiceImpl implements CartService {
     @Transactional(readOnly = true)
     public List<CartResponseDTO> getAllCarts() {
         return cartRepository.findAll().stream()
-                .map(CartMapper::toDto)
+                .map(CartMapper::toDTO)
                 .toList();
     }
 
@@ -172,7 +172,7 @@ public class CartServiceImpl implements CartService {
         if (cartId == null) throw new IllegalArgumentException("cartId must not be null!");
         Cart cart = cartRepository.findByCartId(cartId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart", "cartId", cartId));
-        return CartMapper.toDto(cart);
+        return CartMapper.toDTO(cart);
     }
 
     private Cart resolveCart(CartContext context) {

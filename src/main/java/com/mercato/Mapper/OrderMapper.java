@@ -10,10 +10,10 @@ import java.util.List;
 
 public class OrderMapper {
 
-    public static OrderResponseDTO toDto(Order order) {
+    public static OrderResponseDTO toDTO(Order order) {
         List<OrderLineResponseDTO> orderLineDTOs = order.getOrderLines().stream()
                 .sorted(Comparator.comparing(OrderLine::getOrderLineNumber))
-                .map(OrderLineMapper::toDto)
+                .map(OrderLineMapper::toDTO)
                 .toList();
 
         return new OrderResponseDTO(
@@ -32,8 +32,8 @@ public class OrderMapper {
                         order.getDeliveryState(),
                         order.getDeliveryPincode()
                 ),
-                PaymentMapper.toDto(order.getPayment()),
-                RefundMapper.toDto(order.getPayment().getRefund()),
+                PaymentMapper.toDTO(order.getPayment()),
+                RefundMapper.toDTO(order.getPayment().getRefund()),
                 orderLineDTOs,
                 order.getCurrency(),
                 order.getSubtotal(),

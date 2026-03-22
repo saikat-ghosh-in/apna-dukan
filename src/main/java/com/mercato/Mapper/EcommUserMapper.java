@@ -7,7 +7,7 @@ import java.util.List;
 
 public class EcommUserMapper {
 
-    public static EcommUserResponseDTO toDto(EcommUser user) {
+    public static EcommUserResponseDTO toDTO(EcommUser user) {
         List<String> roles = user.getRoles().stream()
                 .map(role -> role.getRoleName().name())
                 .toList();

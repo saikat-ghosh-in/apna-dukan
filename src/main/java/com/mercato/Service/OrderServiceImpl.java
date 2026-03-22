@@ -74,7 +74,7 @@ public class OrderServiceImpl implements OrderService {
 
         return new OrderPlacementResponseDTO(
                 order.getPayment().getPaymentSessionId(),
-                OrderMapper.toDto(order)
+                OrderMapper.toDTO(order)
         );
     }
 
@@ -139,7 +139,7 @@ public class OrderServiceImpl implements OrderService {
             payment.setGatewayResponseMessage("Cancelled before payment");
             order.setOrderStatus(OrderStatus.CANCELLED);
             orderRepository.save(order);
-            return OrderMapper.toDto(order);
+            return OrderMapper.toDTO(order);
         }
 
         if (trigger != TransitionTrigger.ADMIN) {
@@ -167,7 +167,7 @@ public class OrderServiceImpl implements OrderService {
             }
         });
 
-        return OrderMapper.toDto(
+        return OrderMapper.toDTO(
                 orderRepository.findByOrderId(request.getOrderId())
                         .orElseThrow(() -> new ResourceNotFoundException("Order", "orderId", request.getOrderId()))
         );
@@ -177,7 +177,7 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public List<OrderResponseDTO> getAllOrders() {
         return orderRepository.findAll().stream()
-                .map(OrderMapper::toDto)
+                .map(OrderMapper::toDTO)
                 .toList();
     }
 
@@ -187,7 +187,7 @@ public class OrderServiceImpl implements OrderService {
         EcommUser currentUser = authUtil.getLoggedInUser();
         return orderRepository.findByCustomerEmail(currentUser.getEmail())
                 .stream()
-                .map(OrderMapper::toDto)
+                .map(OrderMapper::toDTO)
                 .toList();
     }
 
@@ -197,7 +197,7 @@ public class OrderServiceImpl implements OrderService {
         EcommUser currentUser = authUtil.getLoggedInUser();
         Order order = orderRepository.findByOrderIdAndCustomerEmail(orderId, currentUser.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "orderId", orderId));
-        return OrderMapper.toDto(order);
+        return OrderMapper.toDTO(order);
     }
 
     @Override
@@ -218,7 +218,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponseDTO getOrder(String orderId) {
         Order order = orderRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "orderId", orderId));
-        return OrderMapper.toDto(order);
+        return OrderMapper.toDTO(order);
     }
 
 

@@ -16,6 +16,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -29,6 +31,7 @@ import java.util.UUID;
                 @UniqueConstraint(name = "uk_product_product_id", columnNames = "product_id")
         },
         indexes = {
+                @Index(name = "idx_product_product_id", columnList = "product_id"),
                 @Index(name = "idx_product_category", columnList = "category_id"),
                 @Index(name = "idx_product_seller", columnList = "seller_fk"),
                 @Index(name = "idx_product_active", columnList = "active"),
@@ -57,8 +60,20 @@ public class Product {
     @Builder.Default
     private boolean active = true;
 
-    @Column(columnDefinition = "TEXT")
-    private String imagePath;
+    @NotBlank(message = "Primary image is required")
+    @Column(name = "primary_image_url", nullable = false, length = 500)
+    private String primaryImageUrl;
+
+    @ElementCollection
+    @CollectionTable(
+            name = "product_secondary_images",
+            joinColumns = @JoinColumn(name = "product_id", nullable = false)
+    )
+    @Column(name = "image_url", length = 500)
+    @OrderColumn(name = "image_order")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @Builder.Default
+    private List<String> secondaryImageUrls = new ArrayList<>();
 
     @NotBlank
     @Size(min = 7, message = "Product description must be at least 7 characters")
@@ -167,11 +182,36 @@ public class Product {
         this.reservedQty = Math.max(0, this.reservedQty - qty);
     }
 
-    public void deactivate() {
-        this.active = false;
+    public void addSecondaryImage(String imageUrl) {
+        if (secondaryImageUrls == null) {
+            secondaryImageUrls = new ArrayList<>();
+        }
+        if (secondaryImageUrls.size() >= 3) {
+            throw new IllegalArgumentException("Maximum 3 secondary images allowed");
+        }
+        secondaryImageUrls.add(imageUrl);
     }
 
-    public void activate() {
-        this.active = true;
+    public void removeSecondaryImage(String imageUrl) {
+        if (secondaryImageUrls != null) {
+            secondaryImageUrls.remove(imageUrl);
+        }
+    }
+
+    public void clearSecondaryImages() {
+        if (secondaryImageUrls != null) {
+            secondaryImageUrls.clear();
+        }
+    }
+
+    public List<String> getAllImages() {
+        List<String> allImages = new ArrayList<>();
+        if (primaryImageUrl != null) {
+            allImages.add(primaryImageUrl);
+        }
+        if (secondaryImageUrls != null) {
+            allImages.addAll(secondaryImageUrls);
+        }
+        return allImages;
     }
 }

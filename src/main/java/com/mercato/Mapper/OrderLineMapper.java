@@ -11,7 +11,7 @@ import java.util.List;
 
 public class OrderLineMapper {
 
-    public static OrderLineResponseDTO toDto(OrderLine orderLine) {
+    public static OrderLineResponseDTO toDTO(OrderLine orderLine) {
         List<StateTransitionResponseDTO> stateTransitionDTOs = orderLine.getStateTransitions()
                 .stream()
                 .sorted(Comparator.comparing(StateTransition::getOccurredAt,

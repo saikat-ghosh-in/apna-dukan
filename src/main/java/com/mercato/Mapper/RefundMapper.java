@@ -5,7 +5,7 @@ import com.mercato.Payloads.Response.RefundResponseDTO;
 
 public class RefundMapper {
 
-    public static RefundResponseDTO toDto(Refund refund) {
+    public static RefundResponseDTO toDTO(Refund refund) {
         if (refund == null) return null;
         return new RefundResponseDTO(
                 refund.getRefundId(),

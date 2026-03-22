@@ -5,7 +5,7 @@ import com.mercato.Payloads.Response.SellerResponseDTO;
 
 public class SellerMapper {
 
-    public static SellerResponseDTO toDto(EcommUser seller) {
+    public static SellerResponseDTO toDTO(EcommUser seller) {
         if (seller == null) return null;
         return new SellerResponseDTO(
                 seller.getEmail(),

@@ -41,7 +41,7 @@ public class AddressServiceImpl implements AddressService {
         currentUser.addAddress(newAddress);
 
         Address savedAddress = addressRepository.save(newAddress);
-        return AddressMapper.toDto(savedAddress);
+        return AddressMapper.toDTO(savedAddress);
     }
 
     @Override
@@ -49,7 +49,7 @@ public class AddressServiceImpl implements AddressService {
     public List<AddressResponseDTO> getAllAddresses() {
         List<Address> addresses = addressRepository.findAll();
         return addresses.stream()
-                .map(AddressMapper::toDto)
+                .map(AddressMapper::toDTO)
                 .toList();
     }
 
@@ -57,7 +57,7 @@ public class AddressServiceImpl implements AddressService {
     @Transactional(readOnly = true)
     public AddressResponseDTO getAddress(String addressId) {
         Address address = getAddressById(addressId); // throws
-        return AddressMapper.toDto(address);
+        return AddressMapper.toDTO(address);
     }
 
     @Override
@@ -66,7 +66,7 @@ public class AddressServiceImpl implements AddressService {
         EcommUser currentUser = authUtil.getLoggedInUser();
         List<Address> addresses = currentUser.getAddresses();
         return addresses.stream()
-                .map(AddressMapper::toDto)
+                .map(AddressMapper::toDTO)
                 .toList();
     }
 
@@ -92,7 +92,7 @@ public class AddressServiceImpl implements AddressService {
         address.setPincode(addressRequestDTO.getPincode());
         address.setCountry(addressRequestDTO.getCountry());
 
-        return AddressMapper.toDto(address);
+        return AddressMapper.toDTO(address);
     }
 
     @Override

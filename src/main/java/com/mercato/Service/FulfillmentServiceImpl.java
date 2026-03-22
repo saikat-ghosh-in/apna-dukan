@@ -56,7 +56,7 @@ public class FulfillmentServiceImpl implements FulfillmentService {
             throw new ResourceNotFoundException("FulfillmentOrder", "fulfillmentId", fulfillmentId);
         }
 
-        return FulfillmentOrderMapper.toDto(fulfillmentId, lines);
+        return FulfillmentOrderMapper.toDTO(fulfillmentId, lines);
     }
 
 
@@ -68,7 +68,7 @@ public class FulfillmentServiceImpl implements FulfillmentService {
                 .filter(entry -> open
                         ? entry.getValue().stream().anyMatch(line -> !line.isTerminal())
                         : entry.getValue().stream().allMatch(OrderLine::isTerminal))
-                .map(entry -> FulfillmentOrderMapper.toDto(entry.getKey(), entry.getValue()))
+                .map(entry -> FulfillmentOrderMapper.toDTO(entry.getKey(), entry.getValue()))
                 .toList();
     }
 }

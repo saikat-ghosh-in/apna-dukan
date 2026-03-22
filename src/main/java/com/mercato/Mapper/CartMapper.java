@@ -7,7 +7,7 @@ import com.mercato.Payloads.Response.CartResponseDTO;
 
 public class CartMapper {
 
-    public static CartResponseDTO toDto(Cart cart) {
+    public static CartResponseDTO toDTO(Cart cart) {
         if (cart == null) return null;
         return new CartResponseDTO(
                 cart.getCartId(),

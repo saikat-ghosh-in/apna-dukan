@@ -172,7 +172,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         EcommUser user = getUserByUserId(userDetails.getUserId());
-        return EcommUserMapper.toDto(user);
+        return EcommUserMapper.toDTO(user);
     }
 
     @Override

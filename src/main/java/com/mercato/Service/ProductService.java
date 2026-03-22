@@ -7,9 +7,7 @@ import com.mercato.Payloads.Request.SellerProductFilterRequestDTO;
 import com.mercato.Payloads.Response.ProductResponseDTO;
 import com.mercato.Payloads.Response.ProductResponse;
 import com.mercato.Payloads.Response.ProductSupplyUpdateResponseDTO;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 
 public interface ProductService {
@@ -31,8 +29,6 @@ public interface ProductService {
     ProductResponseDTO updateProduct(String productId, String categoryId, ProductRequestDTO productRequestDTO);
 
     void deleteProduct(String productId);
-
-    ProductResponseDTO uploadProductImage(String productId, MultipartFile image) throws IOException;
 
     List<ProductSupplyUpdateResponseDTO> updateProductInventory(List<ProductSupplyUpdateRequestDTO> productSupplyUpdateRequestDTOs);
 }

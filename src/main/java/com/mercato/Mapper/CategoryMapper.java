@@ -5,7 +5,7 @@ import com.mercato.Payloads.Response.CategoryResponseDTO;
 
 public class CategoryMapper {
 
-    public static CategoryResponseDTO toDto(Category category) {
+    public static CategoryResponseDTO toDTO(Category category) {
         return new CategoryResponseDTO(
                 category.getCategoryId(),
                 category.getCategoryName(),

@@ -124,7 +124,7 @@ public class OrderLineUpdateServiceImpl implements OrderLineUpdateService {
         syncOrderStatus(orderLine.getOrder());
         orderLineRepository.save(orderLine);
 
-        return OrderLineMapper.toDto(orderLine);
+        return OrderLineMapper.toDTO(orderLine);
     }
 
     private void handleAccept(OrderLine orderLine, int qty) {

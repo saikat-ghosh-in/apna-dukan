@@ -45,7 +45,7 @@ public class UserServiceImpl implements UserService {
         List<EcommUser> allUsers = userRepository.findAll();
 
         return allUsers.stream()
-                .map(EcommUserMapper::toDto)
+                .map(EcommUserMapper::toDTO)
                 .toList();
     }
 
@@ -76,7 +76,7 @@ public class UserServiceImpl implements UserService {
 
         return allSellers.stream()
                 .filter(seller -> seller.isEnabled() && !seller.isAccountLocked())
-                .map(SellerMapper::toDto)
+                .map(SellerMapper::toDTO)
                 .toList();
     }
 
@@ -95,7 +95,7 @@ public class UserServiceImpl implements UserService {
                 && user.isSeller())
             user.setSellerDisplayName(request.getSellerDisplayName());
         userRepository.save(user);
-        return EcommUserMapper.toDto(user);
+        return EcommUserMapper.toDTO(user);
     }
 
     @Override

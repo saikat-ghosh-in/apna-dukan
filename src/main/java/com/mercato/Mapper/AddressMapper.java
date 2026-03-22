@@ -5,7 +5,7 @@ import com.mercato.Payloads.Response.AddressResponseDTO;
 
 public class AddressMapper {
 
-    public static AddressResponseDTO toDto(Address address) {
+    public static AddressResponseDTO toDTO(Address address) {
         return new AddressResponseDTO(
                 address.getAddressId(),
                 address.getUser().getUserId(),

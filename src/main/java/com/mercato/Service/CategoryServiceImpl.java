@@ -36,7 +36,7 @@ public class CategoryServiceImpl implements CategoryService {
         category.setCategoryName(categoryName);
 
         Category savedCategory = categoryRepository.save(category);
-        return CategoryMapper.toDto(savedCategory);
+        return CategoryMapper.toDTO(savedCategory);
     }
 
     @Override
@@ -49,7 +49,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         return categoryRepository.findAll(sort)
                 .stream()
-                .map(CategoryMapper::toDto)
+                .map(CategoryMapper::toDTO)
                 .toList();
     }
 
@@ -57,7 +57,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public CategoryResponseDTO getCategory(String categoryId) {
         Category category = getCategoryByCategoryId(categoryId);
-        return CategoryMapper.toDto(category);
+        return CategoryMapper.toDTO(category);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         category.setCategoryName(categoryName);
         Category savedCategory = categoryRepository.save(category);
-        return CategoryMapper.toDto(savedCategory);
+        return CategoryMapper.toDTO(savedCategory);
     }
 
     @Override

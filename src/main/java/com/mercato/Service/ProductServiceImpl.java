@@ -23,10 +23,9 @@ import com.mercato.Repository.CategoryRepository;
 import com.mercato.Repository.OrderReservationRepository;
 import com.mercato.Repository.ProductRepository;
 import com.mercato.Utils.AuthUtil;
-import com.mercato.Utils.FileService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,9 +33,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,52 +41,38 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProductServiceImpl implements ProductService {
-
-    @Value("${images.products.folder}")
-    private String productsImageFolder;
-
-    @Value("${images.products.placeholder.url}")
-    private String placeholderImageUrl;
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
-    private final FileService fileService;
     private final AuthUtil authUtil;
     private final ProductMapper productMapper;
     private final OrderReservationRepository orderReservationRepository;
     private final CartReservationRepository cartReservationRepository;
+    private final FileService fileService;
 
     @Override
     @Transactional
     public ProductResponseDTO addProduct(String categoryId, ProductRequestDTO productRequestDTO) {
+        productRequestDTO.validate();
+
         Category category = getCategoryByCategoryId(categoryId);
         EcommUser seller = authUtil.getLoggedInUser();
         validateIfAlreadyExists(productRequestDTO.getProductName(), seller.getUserId());
 
-        Product product = new Product();
-        product.setProductName(productRequestDTO.getProductName());
-        product.setActive(productRequestDTO.isActive());
-        product.setImagePath(
-                StringUtils.isNotEmpty(productRequestDTO.getImageUrl())
-                        ? productRequestDTO.getImageUrl()
-                        : placeholderImageUrl
-        );
-        product.setDescription(productRequestDTO.getDescription());
-        product.setRetailPrice(productRequestDTO.getRetailPrice());
-        product.setDiscountPercent(productRequestDTO.getDiscountPercent());
+        Product product = productMapper.toEntity(productRequestDTO);
         product.setCategory(category);
         product.setSeller(seller);
 
         Product savedProduct = productRepository.save(product);
-        return productMapper.toDto(savedProduct);
+        return productMapper.toDTO(savedProduct);
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductResponse getActiveProducts(ProductFilterRequestDTO filter) {
         Sort sort = buildSort(filter.getSortBy(), filter.getSortingOrder());
-
         Specification<Product> spec = buildActiveSpec(filter);
 
         long totalElements = productRepository.count(spec);
@@ -106,7 +89,7 @@ public class ProductServiceImpl implements ProductService {
         Page<Product> productsPage = productRepository.findAll(spec, pageable);
 
         return new ProductResponse(
-                productsPage.getContent().stream().map(productMapper::toDto).toList(),
+                productsPage.getContent().stream().map(productMapper::toDTO).toList(),
                 productsPage.getNumber(),
                 productsPage.getSize(),
                 productsPage.getTotalElements(),
@@ -122,7 +105,7 @@ public class ProductServiceImpl implements ProductService {
             throw new IllegalArgumentException("productId must not be null!");
         Product product = productRepository.findByProductIdAndActiveTrue(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
-        return productMapper.toDto(product);
+        return productMapper.toDTO(product);
     }
 
     @Override
@@ -133,7 +116,7 @@ public class ProductServiceImpl implements ProductService {
 
         return productRepository.findAllBySellerUserId(seller.getUserId(), sort)
                 .stream()
-                .map(productMapper::toDto)
+                .map(productMapper::toDTO)
                 .toList();
     }
 
@@ -145,14 +128,14 @@ public class ProductServiceImpl implements ProductService {
             throw new IllegalArgumentException("productId must not be null!");
         Product product = productRepository.findByProductIdAndSellerUserId(productId, seller.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
-        return productMapper.toDto(product);
+        return productMapper.toDTO(product);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ProductResponseDTO> getAllProducts() {
         return productRepository.findAll().stream()
-                .map(productMapper::toDto)
+                .map(productMapper::toDTO)
                 .toList();
     }
 
@@ -163,13 +146,15 @@ public class ProductServiceImpl implements ProductService {
             throw new IllegalArgumentException("productId must not be null!");
         Product product = productRepository.findByProductId(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", productId));
-        return productMapper.toDto(product);
+        return productMapper.toDTO(product);
     }
 
     @Override
     @Transactional
     public ProductResponseDTO updateProduct(String productId, String categoryId,
                                             ProductRequestDTO productRequestDTO) {
+        productRequestDTO.validate();
+
         EcommUser seller = authUtil.getLoggedInUser();
         Product product = getProductByIdForUpdate(productId);
         validateAuthority(product, seller);
@@ -184,14 +169,26 @@ public class ProductServiceImpl implements ProductService {
             product.setCategory(category);
         }
 
-        product.setProductName(productRequestDTO.getProductName());
-        product.setActive(productRequestDTO.isActive());
-        product.setDescription(productRequestDTO.getDescription());
-        product.setRetailPrice(productRequestDTO.getRetailPrice());
-        product.setDiscountPercent(productRequestDTO.getDiscountPercent());
+        try {
+            if (!productRequestDTO.getPrimaryImageUrl().equals(product.getPrimaryImageUrl())) {
+                fileService.deleteImage(product.getPrimaryImageUrl());
+            }
+
+            if (product.getSecondaryImageUrls() != null) {
+                for (String oldUrl : product.getSecondaryImageUrls()) {
+                    if (!productRequestDTO.getSecondaryImageUrls().contains(oldUrl)) {
+                        fileService.deleteImage(oldUrl);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to delete old images for product: {}", productId, e);
+        }
+
+        productMapper.updateEntity(product, productRequestDTO);
 
         Product savedProduct = productRepository.save(product);
-        return productMapper.toDto(savedProduct);
+        return productMapper.toDTO(savedProduct);
     }
 
     @Override
@@ -200,28 +197,19 @@ public class ProductServiceImpl implements ProductService {
         EcommUser seller = authUtil.getLoggedInUser();
         Product product = getProductByIdForUpdate(productId);
         validateAuthority(product, seller);
+
+        try {
+            fileService.deleteImage(product.getPrimaryImageUrl());
+            if (product.getSecondaryImageUrls() != null) {
+                for (String imageUrl : product.getSecondaryImageUrls()) {
+                    fileService.deleteImage(imageUrl);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to delete images for product: {}", productId, e);
+        }
+
         productRepository.delete(product);
-    }
-
-    @Override
-    @Transactional
-    public ProductResponseDTO uploadProductImage(String productId, MultipartFile image) throws IOException {
-        if (image == null || image.isEmpty())
-            throw new IllegalArgumentException("Image file must not be empty");
-
-        long maxSize = 100 * 1024;
-        if (image.getSize() > maxSize)
-            throw new IllegalArgumentException("Image size must not exceed 100 KB");
-
-        EcommUser seller = authUtil.getLoggedInUser();
-        Product product = getProductByIdForUpdate(productId);
-        validateAuthority(product, seller);
-
-        String imageFilePath = fileService.uploadProductImage(productsImageFolder, image, productId);
-        product.setImagePath(imageFilePath);
-
-        Product savedProduct = productRepository.save(product);
-        return productMapper.toDto(savedProduct);
     }
 
     @Override
@@ -255,7 +243,6 @@ public class ProductServiceImpl implements ProductService {
 
         return responses;
     }
-
 
     private Specification<Product> buildActiveSpec(ProductFilterRequestDTO filter) {
         Specification<Product> activeOnly = (root, query, cb) -> cb.isTrue(root.get("active"));

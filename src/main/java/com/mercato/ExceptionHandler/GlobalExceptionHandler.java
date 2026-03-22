@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
     // Generic exception handlers
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGeneric(Exception ex) {
-        ex.printStackTrace();
+        ex.printStackTrace(); // remove in prod
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse(ex.getMessage(), true));
@@ -121,6 +121,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
                 .body(new ApiResponse(message, true));
+    }
+
+    @ExceptionHandler(InvalidFileException.class)
+    public ResponseEntity<ApiResponse> handleInvalidFileException(InvalidFileException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse(ex.getMessage(), true));
+    }
+
+    @ExceptionHandler(FileUploadException.class)
+    public ResponseEntity<ApiResponse> handleFileUploadException(FileUploadException ex) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse(ex.getMessage(), true));
     }
 
     @ExceptionHandler(BusinessException.class)

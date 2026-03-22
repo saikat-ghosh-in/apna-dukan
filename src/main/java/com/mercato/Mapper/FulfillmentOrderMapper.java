@@ -7,7 +7,7 @@ import java.util.List;
 
 public class FulfillmentOrderMapper {
 
-    public static FulfillmentOrderResponseDTO toDto(
+    public static FulfillmentOrderResponseDTO toDTO(
             String fulfillmentId,
             List<OrderLine> orderLines
     ) {
@@ -29,7 +29,7 @@ public class FulfillmentOrderMapper {
                         first.getOrder().getDeliveryState(),
                         first.getOrder().getDeliveryPincode()
                 ),
-                orderLines.stream().map(OrderLineMapper::toDto).toList(),
+                orderLines.stream().map(OrderLineMapper::toDTO).toList(),
                 first.getCreatedAt()
         );
     }
