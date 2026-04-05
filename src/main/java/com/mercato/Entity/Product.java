@@ -159,7 +159,7 @@ public class Product {
     public void adjustInventory(int delta) {
         int newQuantity = this.physicalQty + delta;
         if (newQuantity < 0) {
-            throw new InsufficientInventoryException(this.productName, this.physicalQty);
+            throw new InsufficientInventoryException(this.productId, this.physicalQty);
         }
         this.physicalQty = newQuantity;
     }
@@ -170,16 +170,15 @@ public class Product {
         this.physicalQty = newQuantity;
     }
 
-    public void increaseReservedQty(int qty) {
-        if (qty <= 0) throw new IllegalArgumentException("Quantity must be greater than 0");
-        if (this.reservedQty + qty > this.physicalQty)
-            throw new InsufficientInventoryException(this.productName, getAvailableQty());
-        this.reservedQty += qty;
-    }
-
-    public void decreaseReservedQty(int qty) {
-        if (qty <= 0) throw new IllegalArgumentException("Quantity must be greater than 0");
-        this.reservedQty = Math.max(0, this.reservedQty - qty);
+    public void adjustReservedQty(int delta) {
+        int updated = this.reservedQty + delta;
+        if (updated < 0) {
+            throw new IllegalStateException("Reserved quantity cannot be negative");
+        }
+        if (updated > this.physicalQty) {
+            throw new InsufficientInventoryException(this.productId, getAvailableQty());
+        }
+        this.reservedQty = updated;
     }
 
     public void addSecondaryImage(String imageUrl) {

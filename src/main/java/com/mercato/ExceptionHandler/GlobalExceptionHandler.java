@@ -22,7 +22,6 @@ public class GlobalExceptionHandler {
     // Generic exception handlers
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGeneric(Exception ex) {
-        ex.printStackTrace(); // remove in prod
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse(ex.getMessage(), true));
@@ -135,6 +134,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse(ex.getMessage(), true));
+    }
+
+    @ExceptionHandler(InsufficientInventoryException.class)
+    public ResponseEntity<InsufficientInventoryResponse> handleInsufficientInventoryException(InsufficientInventoryException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(new InsufficientInventoryResponse(
+                                ex.getMessage(),
+                                true,
+                                ex.getProductId(),
+                                ex.getAvailableQty()
+                        )
+                );
     }
 
     @ExceptionHandler(BusinessException.class)

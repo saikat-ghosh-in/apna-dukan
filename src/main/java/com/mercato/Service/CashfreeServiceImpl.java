@@ -268,7 +268,7 @@ public class CashfreeServiceImpl implements CashfreeService {
         body.put("refund_amount", refund.getAmount());
         body.put("refund_id", refund.getRefundId());
         body.put("refund_note", "Order cancellation - " + order.getOrderId());
-        body.put("refund_speed","STANDARD");
+        body.put("refund_speed", "STANDARD");
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(
@@ -433,15 +433,14 @@ public class CashfreeServiceImpl implements CashfreeService {
                         payment.setGatewayResponseMessage("Synced from Cashfree order status");
                         payment.setCompletedAt(Instant.now());
                         paymentRepository.save(payment);
-
-                        if (!OrderStatus.CONFIRMED.equals(order.getOrderStatus())) {
-                            order.confirmOrder();
-                            recordConfirmationTransitions(order);
-                            orderReservationService.reserveForOrder(order);
-                            orderRepository.save(order);
-                        }
-                        log.info("Order {} synced to PAID/CONFIRMED from Cashfree", order.getOrderId());
                     }
+                    if (!OrderStatus.CONFIRMED.equals(order.getOrderStatus())) {
+                        order.confirmOrder();
+                        recordConfirmationTransitions(order);
+                        orderReservationService.reserveForOrder(order);
+                        orderRepository.save(order);
+                    }
+                    log.info("Order {} synced to PAID/CONFIRMED from Cashfree", order.getOrderId());
                 }
                 case "ACTIVE" -> log.info("Order {} still ACTIVE on Cashfree", order.getOrderId());
                 case "EXPIRED" -> {

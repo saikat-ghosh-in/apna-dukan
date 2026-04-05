@@ -1,11 +1,15 @@
 package com.mercato.ExceptionHandler;
 
-import org.springframework.http.HttpStatus;
+import lombok.Getter;
 
-public class InsufficientInventoryException extends BusinessException {
-    public InsufficientInventoryException(String product, int availableQuantity) {
-        super(product + " only has " + availableQuantity + " units left.",
-                HttpStatus.PARTIAL_CONTENT
-        );
+@Getter
+public class InsufficientInventoryException extends RuntimeException {
+    private final String productId;
+    private final int availableQty;
+
+    public InsufficientInventoryException(String productId, int availableQuantity) {
+        super("Insufficient inventory");
+        this.productId = productId;
+        this.availableQty = availableQuantity;
     }
 }

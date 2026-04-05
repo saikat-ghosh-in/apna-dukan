@@ -75,6 +75,13 @@ public class OrderController {
         return new ResponseEntity<>(order, HttpStatus.OK);
     }
 
+    @PutMapping("/user/orders/{orderId}")
+    public ResponseEntity<OrderResponseDTO> editCurrentUserOrder(@PathVariable String orderId) {
+
+        OrderResponseDTO order = orderService.getCurrentUserOrder(orderId);
+        return new ResponseEntity<>(order, HttpStatus.OK);
+    }
+
     @GetMapping("/user/orders/summary")
     public ResponseEntity<List<OrderSummaryDTO>> getCurrentUserOrderSummaries() {
         return ResponseEntity.ok(orderService.getCurrentUserOrderSummaries());

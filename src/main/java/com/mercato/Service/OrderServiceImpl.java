@@ -126,9 +126,9 @@ public class OrderServiceImpl implements OrderService {
             if (confirmedAt == null) {
                 throw new CustomBadRequestException("Order confirmation time is unavailable");
             }
-            if (Instant.now().isAfter(confirmedAt.plusSeconds(6 * 60 * 60))) {
+            if (Instant.now().isAfter(confirmedAt.plusSeconds(60 * 60))) {
                 throw new CustomBadRequestException(
-                        "Cancellation window has expired. Orders can only be cancelled within 6 hours of confirmation"
+                        "Cancellation window has expired. Orders can only be cancelled within 1 hour of confirmation"
                 );
             }
         }
@@ -232,7 +232,7 @@ public class OrderServiceImpl implements OrderService {
                 ));
         if (product.getAvailableQty() < cartItem.getQuantity()) {
             throw new InsufficientInventoryException(
-                    product.getProductName(), product.getAvailableQty()
+                    product.getProductId(), product.getAvailableQty()
             );
         }
     }

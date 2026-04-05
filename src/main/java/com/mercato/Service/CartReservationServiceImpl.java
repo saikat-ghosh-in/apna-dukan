@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,32 +32,27 @@ public class CartReservationServiceImpl implements CartReservationService {
         Product product = getProductForUpdate(cartItem.getProduct().getProductId());
         int requestedQty = cartItem.getQuantity();
 
-        Optional<CartReservation> existing =
-                cartReservationRepository.findByCartItem_CartItemId(cartItem.getCartItemId());
+        CartReservation reservation = cartReservationRepository
+                .findByCartItem_CartItemId(cartItem.getCartItemId())
+                .map(existing -> {
+                    int delta = requestedQty - existing.getReservedQty();
+                    product.adjustReservedQty(delta);
+                    existing.updateReservedQuantity(requestedQty);
+                    existing.extendExpiry(cartReservationMinutes);
+                    return existing;
+                })
+                .orElseGet(() -> {
+                    product.adjustReservedQty(requestedQty);
+                    return CartReservation.builder()
+                            .cartItem(cartItem)
+                            .product(product)
+                            .reservedQty(requestedQty)
+                            .build();
+                });
 
-        if (existing.isPresent()) {
-            CartReservation cartReservation = existing.get();
-
-            product.decreaseReservedQty(cartReservation.getReservedQty());
-            product.increaseReservedQty(requestedQty);
-
-            cartReservation.updateReservedQuantity(requestedQty);
-            cartReservation.extendExpiry(cartReservationMinutes);
-            productRepository.save(product);
-            cartReservationRepository.save(cartReservation);
-
-        } else {
-            product.increaseReservedQty(requestedQty);
-            productRepository.save(product);
-
-            CartReservation cartReservation = CartReservation.builder()
-                    .cartItem(cartItem)
-                    .product(product)
-                    .reservedQty(requestedQty)
-                    .expiresAt(Instant.now().plusSeconds(cartReservationMinutes * 60L))
-                    .build();
-            cartReservationRepository.save(cartReservation);
-        }
+        reservation.extendExpiry(cartReservationMinutes);
+        productRepository.save(product);
+        cartReservationRepository.save(reservation);
     }
 
     @Override
@@ -67,7 +61,7 @@ public class CartReservationServiceImpl implements CartReservationService {
         cartReservationRepository.findByCartItem_CartItemId(cartItem.getCartItemId())
                 .ifPresent(cartReservation -> {
                     Product product = getProductForUpdate(cartReservation.getProduct().getProductId());
-                    product.decreaseReservedQty(cartReservation.getReservedQty());
+                    product.adjustReservedQty(-cartReservation.getReservedQty());
                     productRepository.save(product);
                     cartReservationRepository.delete(cartReservation);
                 });
@@ -87,7 +81,7 @@ public class CartReservationServiceImpl implements CartReservationService {
 
         cartReservations.forEach(cartReservation -> {
             Product product = getProductForUpdate(cartReservation.getProduct().getProductId());
-            product.decreaseReservedQty(cartReservation.getReservedQty());
+            product.adjustReservedQty(-cartReservation.getReservedQty());
             productRepository.save(product);
         });
 
@@ -106,7 +100,7 @@ public class CartReservationServiceImpl implements CartReservationService {
             Product product = getProductForUpdate(cartReservation.getProduct().getProductId());
             CartItem cartItem = cartReservation.getCartItem();
 
-            product.decreaseReservedQty(cartReservation.getReservedQty());
+            product.adjustReservedQty(-cartReservation.getReservedQty());
             productRepository.save(product);
 
             if (product.getAvailableQty() == 0) {

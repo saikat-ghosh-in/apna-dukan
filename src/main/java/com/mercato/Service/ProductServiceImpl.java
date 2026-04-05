@@ -273,7 +273,7 @@ public class ProductServiceImpl implements ProductService {
         for (CartReservation reservation : cartReservations) {
             if (excess <= 0) break;
             int toRelease = Math.min(reservation.getReservedQty(), excess);
-            product.decreaseReservedQty(toRelease);
+            product.adjustReservedQty(-toRelease);
             excess -= toRelease;
 
             if (toRelease == reservation.getReservedQty()) {
@@ -293,7 +293,7 @@ public class ProductServiceImpl implements ProductService {
         for (OrderReservation reservation : orderReservations) {
             if (excess <= 0) break;
             int toRelease = Math.min(reservation.getReservedQty(), excess);
-            product.decreaseReservedQty(toRelease);
+            product.adjustReservedQty(-toRelease);
             excess -= toRelease;
 
             if (toRelease == reservation.getReservedQty()) {

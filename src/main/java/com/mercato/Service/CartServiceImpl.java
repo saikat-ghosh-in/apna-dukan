@@ -70,20 +70,40 @@ public class CartServiceImpl implements CartService {
     public CartResponseDTO updateProductQuantityInCart(CartItemRequestDTO dto, CartContext context) {
         if (dto.getQuantity() == null || dto.getQuantity() < 0)
             throw new IllegalArgumentException("Quantity cannot be less than 0");
-        if (dto.getQuantity() == 0) {
-            deleteProductFromCart(dto.getProductId(), context);
-            return CartMapper.toDTO(resolveCart(context));
-        }
 
         Cart cart = resolveCart(context);
-        cart.updateProductQuantity(dto.getProductId(), dto.getQuantity());
+        CartItem cartItem = cart.findItemByProductId(dto.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("CartItem", "productId", dto.getProductId()));
+        String warning = null;
 
-        cart.findItemByProductId(dto.getProductId())
-                .ifPresent(cartReservationService::reserve);
+        if (dto.getQuantity() == 0) {
+            cartReservationService.release(cartItem);
+            cart.removeCartItem(cartItem);
+        } else {
+            Product product = productRepository.findByProductIdForUpdate(dto.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product", "productId", dto.getProductId()));
+
+            int delta = dto.getQuantity() - cartItem.getQuantity();
+            int effectiveDelta = Math.min(delta, product.getAvailableQty());
+            int effectiveQty = cartItem.getQuantity() + effectiveDelta;
+
+            if (effectiveQty < dto.getQuantity()) {
+                warning = String.format(
+                        "Only %d unit%s available — your cart has been updated",
+                        effectiveQty, effectiveQty != 1 ? "s" : ""
+                );
+            }
+
+            cart.updateProductQuantity(dto.getProductId(), effectiveQty);
+            cartReservationService.reserve(cartItem);
+        }
 
         cartPricingService.applyCharges(cart);
         cartRepository.save(cart);
-        return CartMapper.toDTO(cart);
+
+        CartResponseDTO response = CartMapper.toDTO(cart);
+        response.setWarning(warning);
+        return response;
     }
 
     @Override
@@ -105,7 +125,8 @@ public class CartServiceImpl implements CartService {
         Cart cart = resolveCart(context);
         if (cart.isEmpty()) return;
 
-        cart.getCartItems().forEach(cartReservationService::release);
+        List<CartItem> itemsToRelease = List.copyOf(cart.getCartItems());
+        itemsToRelease.forEach(cartReservationService::release);
         cart.clear();
         cartPricingService.applyCharges(cart);
         cartRepository.save(cart);
@@ -151,6 +172,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Cart getCartByUser(EcommUser user) {
         Cart cart = cartRepository.findByUser_UserId(user.getUserId()).orElse(null);
         if (cart == null) return null;

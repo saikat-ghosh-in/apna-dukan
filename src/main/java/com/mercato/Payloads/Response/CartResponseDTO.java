@@ -2,11 +2,13 @@ package com.mercato.Payloads.Response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
+@Setter
 @AllArgsConstructor
 public class CartResponseDTO {
     private final String cartId;
@@ -15,4 +17,5 @@ public class CartResponseDTO {
     private final BigDecimal totalCharges;
     private final BigDecimal total;
     private final List<CartItemResponseDTO> cartItems;
+    private String warning;
 }

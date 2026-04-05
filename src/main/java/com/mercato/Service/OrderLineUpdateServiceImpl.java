@@ -73,9 +73,9 @@ public class OrderLineUpdateServiceImpl implements OrderLineUpdateService {
                 if (confirmedAt == null) {
                     throw new CustomBadRequestException("Order confirmation time is unavailable");
                 }
-                if (Instant.now().isAfter(confirmedAt.plusSeconds(6 * 60 * 60))) {
+                if (Instant.now().isAfter(confirmedAt.plusSeconds(60 * 60))) {
                     throw new CustomBadRequestException(
-                            "Cancellation window has expired. Order lines can only be cancelled within 6 hours of confirmation"
+                            "Cancellation window has expired. Order lines can only be cancelled within 1 hour of confirmation"
                     );
                 }
             } else if (lineStatus != OrderLineStatus.CREATED) {
@@ -103,9 +103,16 @@ public class OrderLineUpdateServiceImpl implements OrderLineUpdateService {
             );
         }
 
-        OrderLineStatus toStatus = request.getAction() == OrderLineAction.ACCEPT
-                ? OrderLineStatus.PROCESSING
-                : orderLine.deriveStatus();
+        OrderLineStatus toStatus;
+        if (request.getAction() == OrderLineAction.ACCEPT) {
+            toStatus = OrderLineStatus.PROCESSING;
+        } else if (request.getAction() == OrderLineAction.CANCEL) {
+            toStatus = orderLine.getAcceptedQty() > 0
+                    ? orderLine.deriveStatus()
+                    : OrderLineStatus.CONFIRMED;
+        } else {
+            toStatus = orderLine.deriveStatus();
+        }
         orderLine.setOrderLineStatus(toStatus);
 
         orderLine.addStateTransition(
@@ -180,8 +187,9 @@ public class OrderLineUpdateServiceImpl implements OrderLineUpdateService {
                         || l.getOrderLineStatus() == OrderLineStatus.CANCELLED);
 
         boolean anyProcessing = lines.stream()
-                .anyMatch(l -> l.getOrderLineStatus() == OrderLineStatus.PROCESSING
-                        || l.getOrderLineStatus() == OrderLineStatus.PARTIALLY_PROCESSED);
+                .anyMatch(l -> (l.getOrderLineStatus() == OrderLineStatus.PROCESSING
+                        || l.getOrderLineStatus() == OrderLineStatus.PARTIALLY_PROCESSED)
+                        && l.getAcceptedQty() > 0);
 
         boolean allConfirmed = lines.stream()
                 .allMatch(l -> l.getOrderLineStatus() == OrderLineStatus.CONFIRMED);

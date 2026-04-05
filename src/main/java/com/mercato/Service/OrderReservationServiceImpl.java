@@ -36,7 +36,7 @@ public class OrderReservationServiceImpl implements OrderReservationService {
                             "Product", "productId", orderLine.getProductId()
                     ));
 
-            product.increaseReservedQty(orderLine.getOrderedQty());
+            product.adjustReservedQty(orderLine.getOrderedQty());
             productRepository.save(product);
 
             OrderReservation reservation = OrderReservation.builder()
@@ -66,12 +66,12 @@ public class OrderReservationServiceImpl implements OrderReservationService {
             case SHIP -> {
                 product.adjustInventory(-qty);
                 if (reservation != null) {
-                    product.decreaseReservedQty(qty);
+                    product.adjustReservedQty(-qty);
                 }
             }
             case CANCEL -> {
                 if (reservation != null) {
-                    product.decreaseReservedQty(qty);
+                    product.adjustReservedQty(-qty);
                 }
             }
             default -> throw new IllegalStateException(

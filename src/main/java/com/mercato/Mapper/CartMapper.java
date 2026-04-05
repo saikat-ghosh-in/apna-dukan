@@ -26,8 +26,10 @@ public class CartMapper {
                                 cartItem.getQuantity(),
                                 cartItem.getItemPrice(),
                                 cartItem.getLineTotal(),
+                                cartItem.getProduct().getAvailableQty() > 0,
                                 cartItem.isOutOfStock()
-                        )).toList()
+                        )).toList(),
+                null
         );
     }
 }

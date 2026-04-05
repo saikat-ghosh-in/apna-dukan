@@ -12,5 +12,6 @@ public class CartItemResponseDTO {
     private final int quantity;
     private final BigDecimal itemPrice;
     private final BigDecimal lineTotal;
+    private final boolean canAddMore;
     private final boolean outOfStock;
 }

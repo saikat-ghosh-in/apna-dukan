@@ -6,6 +6,6 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApiResponse {
-    public String message;
+    private String message;
     private boolean error;
 }
