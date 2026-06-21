@@ -86,6 +86,21 @@ public class EmailServiceImpl implements EmailService {
     }
 
 
+    @Async
+    @Override
+    public void sendPasswordResetEmail(String to, String username, String token) {
+        try {
+            String resetLink = frontendUrl + "/reset-password?token=" + token;
+            String subject = "Reset Your Password - Mercato";
+            String body = buildPasswordResetEmailBody(username, resetLink);
+            sendHtmlEmail(to, subject, body);
+            log.info("Password reset email sent to: {}", to);
+        } catch (MessagingException e) {
+            log.error("Failed to send password reset email to: {}", to, e);
+        }
+    }
+
+
     private void sendHtmlEmail(String to, String subject, String htmlBody) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -254,5 +269,43 @@ public class EmailServiceImpl implements EmailService {
                 </body>
                 </html>
                 """.formatted(username, orderId, totalAmount.toPlainString(), ordersUrl);
+    }
+
+    private String buildPasswordResetEmailBody(String username, String resetLink) {
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                        .header { background-color: #111827; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                        .content { padding: 30px; background-color: #f9fafb; border-radius: 0 0 8px 8px; }
+                        .button { display: inline-block; padding: 12px 24px; background-color: #2563eb;
+                                  color: white; text-decoration: none; border-radius: 8px; margin: 20px 0; }
+                        .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>Reset Password</h1>
+                        </div>
+                        <div class="content">
+                            <h2>Hi %s,</h2>
+                            <p>We received a request to reset your Mercato password.</p>
+                            <a href="%s" class="button">Reset Password</a>
+                            <p>Or copy and paste this link into your browser:</p>
+                            <p style="word-break: break-all; color: #6b7280; font-size: 12px;">%s</p>
+                            <p><strong>This link expires in 1 hour.</strong></p>
+                            <p>If you didn't request this, you can ignore this email.</p>
+                        </div>
+                        <div class="footer">
+                            <p>&copy; 2026 Mercato. All rights reserved.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """.formatted(username, resetLink, resetLink);
     }
 }

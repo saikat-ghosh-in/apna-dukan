@@ -1,11 +1,14 @@
 package com.mercato.Controller;
 
+import com.mercato.Payloads.Request.ForgotPasswordRequestDTO;
+import com.mercato.Payloads.Request.ResetPasswordRequestDTO;
 import com.mercato.Payloads.Response.EcommUserResponseDTO;
 import com.mercato.Payloads.Response.MessageResponse;
 import com.mercato.Security.payloads.LoginRequest;
 import com.mercato.Security.payloads.RegisterUserRequest;
 import com.mercato.Security.services.AuthService;
 import com.mercato.Service.EmailVerificationService;
+import com.mercato.Service.PasswordResetService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -22,6 +25,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest,
@@ -46,6 +50,19 @@ public class AuthController {
     public ResponseEntity<MessageResponse> resendVerification(@RequestParam @Email String email) {
         emailVerificationService.resendVerificationEmail(email);
         return ResponseEntity.ok(new MessageResponse("Verification email sent! Please check your inbox."));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<MessageResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDTO request) {
+        passwordResetService.requestPasswordReset(request.getEmail());
+        return ResponseEntity.ok(new MessageResponse(
+                "If that email is registered, you will receive a password reset link shortly."));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequestDTO request) {
+        passwordResetService.resetPassword(request.getToken(), request.getPassword());
+        return ResponseEntity.ok(new MessageResponse("Password updated successfully. You can sign in now."));
     }
 
     @GetMapping("/user/username")

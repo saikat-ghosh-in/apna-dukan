@@ -28,6 +28,8 @@ import ProfileEdit from './components/user/ProfileEdit';
 import Addresses from './components/user/Addresses';
 import EmailVerificationPending from './components/auth/EmailVerificationPending';
 import VerifyEmail from './components/auth/VerifyEmail';
+import ForgotPassword from './components/auth/ForgotPassword';
+import ResetPassword from './components/auth/ResetPassword';
 import AccountDeactivated from './components/auth/AccountDeactivated';
 
 function App() {
@@ -72,6 +74,8 @@ function App() {
             <Route path='/' element={<PrivateRoute publicPage />}>
               <Route path='/login' element={<LogIn />} />
               <Route path='/register' element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email-pending" element={<EmailVerificationPending />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/account-deactivated" element={<AccountDeactivated />} />

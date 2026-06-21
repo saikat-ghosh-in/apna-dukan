@@ -310,7 +310,7 @@ const Profile = () => {
 
                         <SectionCard title="Account Settings">
                             <div className="space-y-1.5">
-                                <NavButton icon={MdLock} label="Change Password" onClick={() => navigate("/change-password")} variant="gray" />
+                                <NavButton icon={MdLock} label="Change Password" onClick={() => navigate("/forgot-password")} variant="gray" />
                                 <NavButton icon={MdLogout} label="Logout" onClick={handleLogout} variant="red" />
                             </div>
                         </SectionCard>
