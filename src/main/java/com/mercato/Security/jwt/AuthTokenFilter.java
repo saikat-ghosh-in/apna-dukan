@@ -47,6 +47,15 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                 String username = jwtUtils.getUserNameFromJwtToken(jwt);
                 UserDetailsImpl userDetails = userDetailsServiceImpl.loadUserByUsername(username);
 
+                if (!userDetails.isEnabled()) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Account is deactivated");
+                    return;
+                }
+                if (!userDetails.isAccountNonLocked()) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Account is locked");
+                    return;
+                }
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails,
                                 null,

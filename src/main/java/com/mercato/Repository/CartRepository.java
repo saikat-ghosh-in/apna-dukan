@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 public interface CartRepository extends JpaRepository<Cart, Long> {
@@ -26,6 +27,14 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
             AND c.updatedAt < :cutoff
             """)
     void deleteStaleGuestCarts(Instant cutoff);
+
+    @EntityGraph(attributePaths = {"cartItems", "cartItems.product"})
+    @Query("""
+            SELECT c FROM Cart c
+            WHERE c.guestToken IS NOT NULL
+            AND c.updatedAt < :cutoff
+            """)
+    List<Cart> findStaleGuestCarts(Instant cutoff);
 
     void deleteByUserId(Long userId);
 }
