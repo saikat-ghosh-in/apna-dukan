@@ -3,7 +3,13 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { FaCheckCircle, FaTimesCircle, FaClock } from "react-icons/fa";
 import { MdShoppingBag } from "react-icons/md";
+import api from "../../backend/api";
+import { clearCart } from "../../reduxStore/actions/cartActions";
 import { clearPaymentData } from "../../reduxStore/actions/paymentActions";
+
+const TERMINAL_FAILURE = new Set(["FAILED", "USER_DROPPED", "CANCELLED"]);
+const POLL_INTERVAL_MS = 3000;
+const POLL_TIMEOUT_MS = 45000;
 
 const PaymentConfirmation = () => {
   const navigate = useNavigate();
@@ -13,17 +19,67 @@ const PaymentConfirmation = () => {
   const orderId = searchParams.get("order_id");
 
   const [status, setStatus] = useState("loading");
+  const [paymentStatus, setPaymentStatus] = useState(null);
 
   useEffect(() => {
     if (!orderId) {
       setStatus("failed");
       return;
     }
-    // Cashfree doesn't pass payment status in return URL
-    // actual status is confirmed via webhook on backend
-    // we show a pending/success UI and direct user to orders
-    dispatch(clearPaymentData());
-    setStatus("success");
+
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = Math.ceil(POLL_TIMEOUT_MS / POLL_INTERVAL_MS);
+
+    const resolveStatus = async () => {
+      try {
+        await api.post(`/orders/${orderId}/sync-payment-refund`);
+        const { data: order } = await api.get(`/user/orders/${orderId}`);
+        if (cancelled) return true;
+
+        const currentStatus = order?.paymentSummary?.status;
+        setPaymentStatus(currentStatus);
+
+        if (currentStatus === "SUCCESS") {
+          dispatch(clearCart());
+          dispatch(clearPaymentData());
+          setStatus("success");
+          return true;
+        }
+
+        if (TERMINAL_FAILURE.has(currentStatus)) {
+          dispatch(clearPaymentData());
+          setStatus("failed");
+          return true;
+        }
+
+        return false;
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Payment status sync failed:", error);
+        }
+        return false;
+      }
+    };
+
+    const poll = async () => {
+      const done = await resolveStatus();
+      if (done || cancelled) return;
+
+      attempts += 1;
+      if (attempts >= maxAttempts) {
+        dispatch(clearPaymentData());
+        setStatus("pending");
+      }
+    };
+
+    poll();
+    const intervalId = setInterval(poll, POLL_INTERVAL_MS);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
   }, [orderId, dispatch]);
 
   if (status === "loading") {
@@ -50,26 +106,52 @@ const PaymentConfirmation = () => {
                 <FaTimesCircle size={40} className="text-red-400" />
               </div>
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Something went wrong</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Payment not completed</h2>
             <p className="text-sm text-gray-500 mb-6">
-              We couldn't confirm your payment. Please try again from checkout.
+              {paymentStatus
+                ? `Payment status: ${paymentStatus.replaceAll("_", " ").toLowerCase()}`
+                : "We couldn't confirm your payment. You can retry from your orders page."}
             </p>
             <div className="flex flex-col gap-3">
               <button
-                onClick={() => navigate("/checkout")}
+                onClick={() => navigate(orderId ? `/orders?orderId=${orderId}` : "/orders")}
                 className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-all"
               >
-                Return to Checkout
+                View Order & Retry Payment
               </button>
-              {orderId && (
-                <button
-                  onClick={() => navigate(`/orders?orderId=${orderId}`)}
-                  className="w-full py-3 bg-blue-50 hover:bg-blue-100 text-blue-600 text-sm font-bold rounded-xl transition-colors"
-                >
-                  Check Order Status
-                </button>
-              )}
+              <button
+                onClick={() => navigate("/cart")}
+                className="w-full py-3 bg-blue-50 hover:bg-blue-100 text-blue-600 text-sm font-bold rounded-xl transition-colors"
+              >
+                Return to Cart
+              </button>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "pending") {
+    return (
+      <div className="bg-gray-50 min-h-screen py-6 flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-yellow-50 rounded-2xl">
+                <FaClock size={40} className="text-yellow-500" />
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Payment processing</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Your payment is still being confirmed. Check your order shortly for the latest status.
+            </p>
+            <button
+              onClick={() => navigate(orderId ? `/orders?orderId=${orderId}` : "/orders")}
+              className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-all"
+            >
+              View Order
+            </button>
           </div>
         </div>
       </div>
@@ -85,18 +167,10 @@ const PaymentConfirmation = () => {
               <FaCheckCircle size={40} className="text-green-500" />
             </div>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Payment Submitted!</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Payment confirmed!</h2>
           <p className="text-sm text-gray-500 mb-2">
-            Your payment is being processed. We'll update your order status shortly.
+            Your order is confirmed. We'll email you a receipt shortly.
           </p>
-
-          {/* Pending notice */}
-          <div className="flex items-center gap-2 p-3 bg-yellow-50 rounded-xl mb-6">
-            <FaClock className="text-yellow-500 shrink-0" />
-            <p className="text-xs text-yellow-700 text-left">
-              Payment confirmation may take a few seconds. Check your order for the latest status.
-            </p>
-          </div>
 
           {orderId && (
             <div className="mb-6 p-4 bg-gray-50 rounded-xl text-left">

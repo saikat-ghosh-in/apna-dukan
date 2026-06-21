@@ -60,6 +60,7 @@ public class CashfreeServiceImpl implements CashfreeService {
     private final CartService cartService;
     private final UserRepository userRepository;
     private final AuthUtil authUtil;
+    private final EmailService emailService;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final RefundRepository refundRepository;
@@ -521,6 +522,13 @@ public class CashfreeServiceImpl implements CashfreeService {
         }
 
         orderRepository.save(order);
+
+        emailService.sendOrderConfirmationEmail(
+                order.getCustomerEmail(),
+                order.getCustomerName(),
+                order.getOrderId(),
+                order.getTotalAmount()
+        );
 
         log.info("Order confirmed via webhook: {}", orderId);
     }

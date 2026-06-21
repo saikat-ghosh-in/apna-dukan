@@ -125,6 +125,7 @@ public class Cart {
                                 .cart(this)
                                 .product(product)
                                 .quantity(quantity)
+                                .unitPrice(product.getSellingPrice())
                                 .build())
                 );
     }

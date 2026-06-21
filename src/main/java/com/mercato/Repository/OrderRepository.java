@@ -30,7 +30,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("""
             SELECT new com.mercato.Payloads.Response.OrderSummaryDTO(
-                o.orderId, o.orderStatus, o.totalAmount, o.createdAt
+                o.orderId, o.orderStatus, o.paymentStatus, o.totalAmount, o.createdAt
             )
             FROM Order o
             WHERE o.customerEmail = :email
@@ -111,4 +111,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 GROUP BY o.orderStatus
             """)
     List<Object[]> findOrderStatusBreakdown();
+
+    @EntityGraph(attributePaths = {"payment"})
+    @Query("""
+            SELECT o FROM Order o
+            JOIN o.payment p
+            WHERE o.orderStatus = com.mercato.Entity.fulfillment.OrderStatus.CREATED
+            AND p.status IN (
+                com.mercato.Entity.fulfillment.payment.PaymentStatus.INITIATED,
+                com.mercato.Entity.fulfillment.payment.PaymentStatus.FAILED,
+                com.mercato.Entity.fulfillment.payment.PaymentStatus.USER_DROPPED
+            )
+            AND o.createdAt < :cutoff
+            """)
+    List<Order> findAbandonedUnpaidOrders(@Param("cutoff") Instant cutoff);
 }

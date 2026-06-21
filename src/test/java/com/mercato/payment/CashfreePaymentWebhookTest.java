@@ -10,6 +10,7 @@ import com.mercato.Repository.RefundRepository;
 import com.mercato.Repository.UserRepository;
 import com.mercato.Service.CartService;
 import com.mercato.Service.CashfreeServiceImpl;
+import com.mercato.Service.EmailService;
 import com.mercato.Service.OrderReservationService;
 import com.mercato.Utils.AuthUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,6 +39,7 @@ class CashfreePaymentWebhookTest {
     @Mock private CartService cartService;
     @Mock private UserRepository userRepository;
     @Mock private AuthUtil authUtil;
+    @Mock private EmailService emailService;
     @Mock private RestTemplate restTemplate;
     @Mock private RefundRepository refundRepository;
 
@@ -53,6 +55,7 @@ class CashfreePaymentWebhookTest {
                 cartService,
                 userRepository,
                 authUtil,
+                emailService,
                 restTemplate,
                 objectMapper,
                 refundRepository

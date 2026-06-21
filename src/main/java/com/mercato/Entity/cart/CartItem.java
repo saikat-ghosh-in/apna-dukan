@@ -51,6 +51,9 @@ public class CartItem {
     @Min(1)
     private int quantity;
 
+    @Column(name = "unit_price", precision = 10, scale = 2)
+    private BigDecimal unitPrice;
+
     @Column(name = "out_of_stock", nullable = false)
     @Builder.Default
     private boolean outOfStock = false;
@@ -58,6 +61,9 @@ public class CartItem {
 
     @Transient
     public BigDecimal getItemPrice() {
+        if (unitPrice != null) {
+            return unitPrice;
+        }
         return product.getSellingPrice();
     }
 

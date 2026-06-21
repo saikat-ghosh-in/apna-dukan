@@ -12,7 +12,7 @@ const CashfreePayment = () => {
     const [initializing, setInitializing] = useState(true);
 
     useEffect(() => {
-        if (!paymentData || !paymentData.paymentSessionId || !selectedAddressForCheckout) {
+        if (!paymentData || !paymentData.paymentSessionId) {
             toast.error("Payment session missing. Please start from checkout.");
             navigate("/checkout");
             return;

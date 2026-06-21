@@ -10,6 +10,8 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -67,6 +69,19 @@ public class EmailServiceImpl implements EmailService {
             log.info("Reactivation confirmation email sent to: {}", to);
         } catch (MessagingException e) {
             log.error("Failed to send reactivation confirmation email to: {}", to, e);
+        }
+    }
+
+    @Async
+    @Override
+    public void sendOrderConfirmationEmail(String to, String username, String orderId, BigDecimal totalAmount) {
+        try {
+            String subject = "Order Confirmed - Mercato #" + orderId;
+            String body = buildOrderConfirmationEmailBody(username, orderId, totalAmount);
+            sendHtmlEmail(to, subject, body);
+            log.info("Order confirmation email sent to: {} for order {}", to, orderId);
+        } catch (MessagingException e) {
+            log.error("Failed to send order confirmation email to: {} for order {}", to, orderId, e);
         }
     }
 
@@ -201,5 +216,43 @@ public class EmailServiceImpl implements EmailService {
                 </body>
                 </html>
                 """.formatted(username);
+    }
+
+    private String buildOrderConfirmationEmailBody(String username, String orderId, BigDecimal totalAmount) {
+        String ordersUrl = frontendUrl + "/orders?orderId=" + orderId;
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                        .header { background-color: #111827; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                        .content { padding: 30px; background-color: #f9fafb; border-radius: 0 0 8px 8px; }
+                        .button { display: inline-block; padding: 12px 24px; background-color: #2563eb;
+                                  color: white; text-decoration: none; border-radius: 8px; margin: 20px 0; }
+                        .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>Order Confirmed</h1>
+                        </div>
+                        <div class="content">
+                            <h2>Thanks for your order, %s!</h2>
+                            <p>We've received your payment and your order is confirmed.</p>
+                            <p><strong>Order ID:</strong> %s</p>
+                            <p><strong>Total paid:</strong> INR %s</p>
+                            <a href="%s" class="button">View Order</a>
+                            <p>We'll notify you when your items ship.</p>
+                        </div>
+                        <div class="footer">
+                            <p>&copy; 2026 Mercato. All rights reserved.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """.formatted(username, orderId, totalAmount.toPlainString(), ordersUrl);
     }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   MdShoppingBag, MdArrowBack,
@@ -10,6 +11,7 @@ import OrderDetails from "./OrderDetails";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatDate } from "../../utils/formatDate";
 import { getOrderStatus } from "../../utils/orderUtils";
+import { retryPayment } from "../../utils/paymentUtils";
 
 const OrderSkeleton = () => (
   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 animate-pulse">
@@ -56,14 +58,20 @@ const ErrorState = ({ message, onRetry }) => (
   </div>
 );
 
-const OrderCard = ({ ord, onClick }) => {
+const OrderCard = ({ ord, onClick, onResumePayment, resumingOrderId }) => {
   const { label, color, sublabel, icon: StatusIcon } = getOrderStatus(ord.orderStatus);
+  const needsPayment = ord.orderStatus === "CREATED"
+    && ord.paymentStatus
+    && ord.paymentStatus !== "SUCCESS";
+
   return (
     <div
-      onClick={onClick}
-      className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer overflow-hidden"
+      className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
     >
-      <div className="flex items-center gap-4 px-5 py-4">
+      <div
+        onClick={onClick}
+        className="flex items-center gap-4 px-5 py-4 cursor-pointer"
+      >
         <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
           <MdShoppingBag size={18} className="text-gray-400" />
         </div>
@@ -89,6 +97,20 @@ const OrderCard = ({ ord, onClick }) => {
           <MdArrowForward size={16} className="text-gray-300 group-hover:text-blue-500 transition-colors" />
         </div>
       </div>
+      {needsPayment && (
+        <div className="px-5 pb-4">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onResumePayment?.(ord);
+            }}
+            className="w-full py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-60"
+            disabled={resumingOrderId === ord.orderId}
+          >
+            Complete Payment
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -97,11 +119,13 @@ const OrderCard = ({ ord, onClick }) => {
 const Orders = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const orderId = new URLSearchParams(location.search).get("orderId");
 
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [resumingOrderId, setResumingOrderId] = useState(null);
 
   const fetchOrders = async () => {
     try {
@@ -117,6 +141,17 @@ const Orders = () => {
   };
 
   useEffect(() => { fetchOrders(); }, []);
+
+  const handleResumePayment = async (ord) => {
+    setResumingOrderId(ord.orderId);
+    await retryPayment({
+      order: { orderId: ord.orderId, totalAmount: ord.totalAmount },
+      dispatch,
+      navigate,
+      setLoading: () => {},
+    });
+    setResumingOrderId(null);
+  };
 
   if (orderId) return <OrderDetails orderId={orderId} />;
 
@@ -165,6 +200,8 @@ const Orders = () => {
                 key={ord.orderId}
                 ord={ord}
                 onClick={() => navigate(`/orders?orderId=${ord.orderId}`)}
+                onResumePayment={handleResumePayment}
+                resumingOrderId={resumingOrderId}
               />
             ))}
           </div>
