@@ -2,13 +2,13 @@
 
 Mercato is a multi-seller e-commerce marketplace aimed at the Indian market — INR pricing, domestic payment methods, seller fulfillment dashboards alongside the customer storefront. The live demo is at [mercato-in.netlify.app](https://mercato-in.netlify.app).
 
-This repo is a monorepo: the Spring Boot API lives at the root, and the React storefront lives in `frontend/`. I kept them together so order/payment/inventory changes stay in one pull request instead of chasing two repos.
+This repo is a monorepo: the Spring Boot API lives in `backend/`, and the React storefront lives in `frontend/`. I kept them together so order/payment/inventory changes stay in one pull request instead of chasing two repos.
 
 ---
 
 ## How the repo is organized
 
-**Backend (repo root)** — standard Spring Boot layout under `src/main/java/com/mercato/`:
+**Backend (`backend/`)** — standard Spring Boot layout under `backend/src/main/java/com/mercato/`:
 
 - `Entity/` — JPA models. Cart stuff (`Entity/cart/`), order snapshots and fulfillment (`Entity/fulfillment/`), payments and refunds (`Entity/fulfillment/payment/`).
 - `Service/` — where the real logic lives. `OrderServiceImpl` owns checkout capture; `CashfreeServiceImpl` owns the payment gateway boundary; `CartReservationServiceImpl` and `OrderReservationServiceImpl` own inventory holds; `FulfillmentServiceImpl` and `OrderLineUpdateServiceImpl` handle post-payment seller workflow.
@@ -98,9 +98,33 @@ Three schedulers keep inventory honest without manual intervention:
 
 ---
 
-## Tests
+## Build, test, and deploy
 
-State-transition tests live under `src/test/java/com/mercato/` — order status changes, payment webhooks, inventory finalization (including poll/webhook ordering), and a concurrent finalize test (`CashfreeFinalizeConcurrencyTest`) that barriers two threads on the reservation insert and asserts one row, one email, and correct `reservedQty`. They are unit tests with mocked persistence, not a full integration suite.
+**Tests** — from `backend/`:
+
+```bash
+./mvnw test          # Unix
+mvnw.cmd test        # Windows
+```
+
+State-transition tests live under `backend/src/test/java/com/mercato/` — order status changes, payment webhooks, inventory finalization (including poll/webhook ordering), and a concurrent finalize test (`CashfreeFinalizeConcurrencyTest`) that barriers two threads on the reservation insert and asserts one row, one email, and correct `reservedQty`. They are unit tests with mocked persistence, not a full integration suite.
+
+**Production JAR** — from `backend/`:
+
+```bash
+mvnw.cmd clean package -DskipTests
+```
+
+The build writes `backend/target/mercato-backend.jar` (`finalName` in `pom.xml`). Copy that JAR to the Oracle VM, configure `application-prod.properties` / environment for the database, Cashfree keys, and mail, then run it as a Windows service (e.g. NSSM or `sc create`) pointing at `java -jar mercato-backend.jar`. Default port is 6099.
+
+**Frontend** — from `frontend/`:
+
+```bash
+npm install
+npm run build
+```
+
+Deploy the `frontend/dist/` output to Netlify (or any static host). Point `VITE_API_BASE_URL` at the backend service URL.
 
 ---
 
