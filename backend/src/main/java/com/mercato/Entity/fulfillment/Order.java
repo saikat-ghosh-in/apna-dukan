@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -90,6 +91,7 @@ public class Order {
     private BigDecimal charges;
 
     @Column(name = "tax_amount", nullable = false, precision = 15, scale = 2, updatable = false)
+    @ColumnDefault("0")
     private BigDecimal taxAmount = BigDecimal.ZERO;
 
     @Column(nullable = false, precision = 15, scale = 2, updatable = false)
@@ -115,6 +117,7 @@ public class Order {
     private Instant shipmentEmailSentAt;
 
     @Column(name = "inventory_finalization_failed", nullable = false)
+    @ColumnDefault("false")
     private boolean inventoryFinalizationFailed = false;
 
 
