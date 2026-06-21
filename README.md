@@ -98,33 +98,9 @@ Three schedulers keep inventory honest without manual intervention:
 
 ---
 
-## Build, test, and deploy
+## Tests
 
-**Tests** — from `backend/`:
-
-```bash
-./mvnw test          # Unix
-mvnw.cmd test        # Windows
-```
-
-State-transition tests live under `backend/src/test/java/com/mercato/` — order status changes, payment webhooks, inventory finalization (including poll/webhook ordering), and a concurrent finalize test (`CashfreeFinalizeConcurrencyTest`) that barriers two threads on the reservation insert and asserts one row, one email, and correct `reservedQty`. They are unit tests with mocked persistence, not a full integration suite.
-
-**Production JAR** — from `backend/`:
-
-```bash
-mvnw.cmd clean package -DskipTests
-```
-
-The build writes `backend/target/mercato-backend.jar` (`finalName` in `pom.xml`). Copy that JAR to the Oracle VM, configure `application-prod.properties` / environment for the database, Cashfree keys, and mail, then run it as a Windows service (e.g. NSSM or `sc create`) pointing at `java -jar mercato-backend.jar`. Default port is 6099.
-
-**Frontend** — from `frontend/`:
-
-```bash
-npm install
-npm run build
-```
-
-Deploy the `frontend/dist/` output to Netlify (or any static host). Point `VITE_API_BASE_URL` at the backend service URL.
+State-transition tests under `backend/src/test/java/com/mercato/` cover order status changes, payment webhooks, inventory finalization (including poll/webhook ordering), and a concurrent finalize test (`CashfreeFinalizeConcurrencyTest`) that barriers two threads on the reservation insert and asserts one row, one email, and correct `reservedQty`. They are unit tests with mocked persistence, not a full integration suite.
 
 ---
 
