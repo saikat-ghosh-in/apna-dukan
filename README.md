@@ -64,17 +64,17 @@ Here is the path a paid order actually takes through the system.
 
 **2. Order capture** — `POST /orders/capture` (`OrderServiceImpl.placeOrder`) validates the cart is non-empty, resolves the shipping address with an ownership check, builds an `Order` in `CREATED` status with snapshotted lines, creates a Cashfree order, and stores a `Payment` in `INITIATED` with the session ID. Before saving, it runs `validateHeld()` on each cart line so checkout fails fast if a hold expired. The cart is left intact.
 
-**3. Payment** — The frontend loads Cashfree’s JS SDK (`CashfreePayment.jsx`) with the session ID and sends the customer through their hosted flow. On return, `PaymentConfirmation.jsx` lands on `/checkout/payment-confirmation?order_id=…` (`CASHFREE_RETURN_URL` must match; `/payment-confirmation` is kept as an alias).
+**3. Payment** — The frontend loads Cashfree’s JS SDK (`CashfreePayment.jsx`) with the session ID and sends the customer through their hosted flow. On return, `PaymentConfirmation.jsx` lands on `/checkout/payment-confirmation?order_id=…` (`/payment-confirmation` is kept as an alias).
 
 **4. Confirmation via webhook and poll** — Cashfree notifies the backend asynchronously (`handleWebhookEvent` → `PAYMENT_SUCCESS`), and the confirmation page polls `POST /orders/{id}/sync-payment-refund`, which calls `syncOrderStatus` when the Cashfree order is `PAID`. Both paths converge on the same method: `finalizeOrderAfterPaymentSuccess()` in `CashfreeServiceImpl`.
 
-I need both because webhooks are not reliable as the only signal — localhost dev, network blips, or a user closing the tab before the webhook fires should not leave an order stuck in `CREATED` after Cashfree has the money. Polling is the backstop; the webhook is the fast path.
+I need both because webhooks are not reliable as the only signal — dropped delivery, network blips, or a user closing the tab before the webhook fires should not leave an order stuck in `CREATED` after Cashfree has the money. Polling is the backstop; the webhook is the fast path.
 
 **5. Finalize inventory** — `OrderReservationServiceImpl.finalizeInventoryForPaidOrder()` is idempotent per line:
 
 - If an `OrderReservation` already exists, release any orphaned cart hold still hanging around (this handles the poll-before-webhook ordering without double-counting `reservedQty`).
 - Else if a cart hold exists, *transfer* it: delete the `CartReservation`, insert the `OrderReservation`, no net change to `reservedQty`.
-- Else *reserve* fresh for the order line (poll-only path where the cart hold expired but payment still succeeded — a known edge case documented in `TODO.md`).
+- Else *reserve* fresh for the order line (poll-only path where the cart hold expired but payment still succeeded — see *What is not built yet*).
 
 The method returns `true` only when this invocation actually created the reservations. That boolean is the “primary finalizer” signal.
 
@@ -98,12 +98,11 @@ Three schedulers keep inventory honest without manual intervention:
 
 ---
 
-## Tests
-
-State-transition tests under `backend/src/test/java/com/mercato/` cover order status changes, payment webhooks, inventory finalization (including poll/webhook ordering), and a concurrent finalize test (`CashfreeFinalizeConcurrencyTest`) that barriers two threads on the reservation insert and asserts one row, one email, and correct `reservedQty`. They are unit tests with mocked persistence, not a full integration suite.
-
----
-
 ## What is not built yet
 
-See [TODO.md](TODO.md) for the backlog — coupons, GST, reviews, RMA, webhook idempotency store, and the cart-hold-expiry edge case on payment retry are the main open items.
+- Promo codes / coupons
+- GST / legal tax breakdown (placeholder tax line exists; not compliance-grade)
+- Product reviews and ratings
+- Returns / RMA after delivery
+- Webhook idempotency store (deduplicate Cashfree event IDs)
+- Cart-hold expiry on payment retry (customer pays after the soft hold TTL; inventory finalization can fail or require a fresh reserve)
