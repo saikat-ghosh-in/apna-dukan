@@ -4,6 +4,7 @@ import com.mercato.Entity.cart.CartReservation;
 import com.mercato.Entity.Product;
 import com.mercato.Entity.cart.Cart;
 import com.mercato.Entity.cart.CartItem;
+import com.mercato.ExceptionHandler.InsufficientInventoryException;
 import com.mercato.ExceptionHandler.ResourceNotFoundException;
 import com.mercato.Repository.CartReservationRepository;
 import com.mercato.Repository.ProductRepository;
@@ -109,6 +110,17 @@ public class CartReservationServiceImpl implements CartReservationService {
 
             cartReservationRepository.delete(cartReservation);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void validateHeld(@NonNull CartItem cartItem) {
+        cartReservationRepository.findByCartItem_CartItemId(cartItem.getCartItemId())
+                .filter(reservation -> reservation.getReservedQty() >= cartItem.getQuantity())
+                .orElseThrow(() -> new InsufficientInventoryException(
+                        cartItem.getProduct().getProductId(),
+                        cartItem.getProduct().getAvailableQty()
+                ));
     }
 
     private Product getProductForUpdate(String productId) {

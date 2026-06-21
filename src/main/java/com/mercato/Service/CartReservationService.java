@@ -12,5 +12,7 @@ public interface CartReservationService {
     void releaseAllForCart(Cart cart);
 
     void releaseExpired();
+
+    void validateHeld(CartItem cartItem);
 }
 

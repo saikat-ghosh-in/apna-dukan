@@ -6,6 +6,8 @@ import com.mercato.Entity.Product;
 import com.mercato.Entity.cart.Cart;
 import com.mercato.Entity.cart.CartItem;
 import com.mercato.Entity.fulfillment.Order;
+import com.mercato.Entity.fulfillment.payment.Payment;
+import com.mercato.Entity.fulfillment.payment.PaymentStatus;
 import com.mercato.Payloads.Request.OrderCaptureRequestDTO;
 import com.mercato.Payloads.Response.CashfreeOrderResponse;
 import com.mercato.Payloads.Response.OrderPlacementResponseDTO;
@@ -59,6 +61,11 @@ class OrderServicePlaceOrderTest {
                 .sellingPrice(BigDecimal.valueOf(100))
                 .build();
 
+        EcommUser seller = new EcommUser();
+        seller.setEmail("seller@test.com");
+        seller.setSellerDisplayName("Seller");
+        product.setSeller(seller);
+
         CartItem cartItem = CartItem.builder()
                 .cartItemId(11L)
                 .product(product)
@@ -81,6 +88,17 @@ class OrderServicePlaceOrderTest {
                 .thenReturn(Optional.of(address));
         when(cashfreeService.createOrder(any(Order.class), eq(user)))
                 .thenReturn(new CashfreeOrderResponse("CF-1", "SESSION-1"));
+        doAnswer(invocation -> {
+            Order order = invocation.getArgument(0);
+            Payment payment = new Payment();
+            payment.setPaymentSessionId("SESSION-1");
+            payment.setStatus(PaymentStatus.INITIATED);
+            payment.setPaymentMethod(com.mercato.Entity.fulfillment.payment.PaymentMethod.UNKNOWN);
+            payment.setAmount(order.getTotalAmount());
+            payment.setCurrency("INR");
+            order.attachPayment(payment);
+            return null;
+        }).when(cashfreeService).initiatePayment(any(Order.class), any(), any());
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
         OrderPlacementResponseDTO response = orderService.placeOrder(request);

@@ -3,6 +3,7 @@ package com.mercato.Service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mercato.Entity.EcommUser;
+import com.mercato.Entity.cart.Cart;
 import com.mercato.Entity.fulfillment.*;
 import com.mercato.Entity.fulfillment.payment.*;
 import com.mercato.ExceptionHandler.CustomBadRequestException;
@@ -11,6 +12,9 @@ import com.mercato.Payloads.Response.CashfreeOrderResponse;
 import com.mercato.Repository.OrderRepository;
 import com.mercato.Repository.PaymentRepository;
 import com.mercato.Repository.RefundRepository;
+import com.mercato.Repository.UserRepository;
+import com.mercato.Utils.AuthUtil;
+import com.mercato.Utils.CartContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -53,6 +57,9 @@ public class CashfreeServiceImpl implements CashfreeService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final OrderReservationService orderReservationService;
+    private final CartService cartService;
+    private final UserRepository userRepository;
+    private final AuthUtil authUtil;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     private final RefundRepository refundRepository;
@@ -176,6 +183,10 @@ public class CashfreeServiceImpl implements CashfreeService {
     @Override
     @Transactional
     public String syncPaymentAndRefund(String orderId) {
+        EcommUser currentUser = authUtil.getLoggedInUser();
+        orderRepository.findByOrderIdAndCustomerEmail(orderId, currentUser.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("Order", "orderId", orderId));
+
         Payment payment = paymentRepository.findByOrder_OrderId(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment", "orderId", orderId));
 
@@ -495,7 +506,20 @@ public class CashfreeServiceImpl implements CashfreeService {
 
         order.confirmOrder();
         recordConfirmationTransitions(order);
-        orderReservationService.reserveForOrder(order);
+
+        Optional<EcommUser> buyer = userRepository.findByEmail(order.getCustomerEmail());
+        if (buyer.isPresent()) {
+            Cart cart = cartService.getCartByUser(buyer.get());
+            if (cart != null && cart.getCartItems() != null && !cart.getCartItems().isEmpty()) {
+                orderReservationService.transferCartReservationsToOrder(order, cart);
+                cartService.clearCart(new CartContext(buyer.get().getUserId(), null));
+            } else {
+                orderReservationService.reserveForOrder(order);
+            }
+        } else {
+            orderReservationService.reserveForOrder(order);
+        }
+
         orderRepository.save(order);
 
         log.info("Order confirmed via webhook: {}", orderId);
@@ -515,6 +539,12 @@ public class CashfreeServiceImpl implements CashfreeService {
             payment.setGatewayResponseMessage(message);
             payment.setCompletedAt(Instant.now());
             paymentRepository.save(payment);
+
+            orderRepository.findByOrderId(orderId).ifPresent(order -> {
+                order.setPaymentStatus(PaymentStatus.FAILED);
+                orderRepository.save(order);
+            });
+
             log.warn("Payment failed for order: {}", orderId);
         });
     }
@@ -531,20 +561,32 @@ public class CashfreeServiceImpl implements CashfreeService {
             payment.setGatewayReference(cfPaymentId);
             payment.setGatewayResponseMessage("User dropped payment");
             paymentRepository.save(payment);
+
+            orderRepository.findByOrderId(orderId).ifPresent(order -> {
+                order.setPaymentStatus(PaymentStatus.USER_DROPPED);
+                orderRepository.save(order);
+            });
         });
     }
 
     private void handleRefundStatus(JsonNode root) {
         JsonNode refundNode = root.get("data").get("refund");
-        String gatewayRefundId = refundNode.get("refund_id").asText();
+        String merchantRefundId = refundNode.get("refund_id").asText();
+        String cfRefundId = refundNode.has("cf_refund_id")
+                ? refundNode.get("cf_refund_id").asText() : null;
         String status = refundNode.get("refund_status").asText();
         String message = refundNode.has("refund_message")
                 ? refundNode.get("refund_message").asText() : null;
 
         log.info("Processing REFUND_STATUS_WEBHOOK for refundId={}, status={}",
-                gatewayRefundId, status);
+                merchantRefundId, status);
 
-        refundRepository.findByGatewayReference(gatewayRefundId).ifPresent(refund -> {
+        Optional<Refund> refundLookup = refundRepository.findByRefundId(merchantRefundId);
+        if (refundLookup.isEmpty() && cfRefundId != null) {
+            refundLookup = refundRepository.findByGatewayReference(cfRefundId);
+        }
+
+        refundLookup.ifPresent(refund -> {
             switch (status.toUpperCase()) {
                 case "SUCCESS" -> {
                     refund.setStatus(RefundStatus.SUCCESS);
@@ -555,10 +597,10 @@ public class CashfreeServiceImpl implements CashfreeService {
                     refund.setFailureReason(message);
                 }
                 default -> log.warn("Unhandled refund status: {} for refundId={}",
-                        status, gatewayRefundId);
+                        status, merchantRefundId);
             }
             refundRepository.save(refund);
-            log.info("Refund {} updated to status={}", gatewayRefundId, status);
+            log.info("Refund {} updated to status={}", merchantRefundId, status);
         });
     }
 
@@ -614,7 +656,7 @@ public class CashfreeServiceImpl implements CashfreeService {
             case "credit_card_emi", "debit_card_emi" -> PaymentMethod.CREDIT_CARD_EMI;
             case "cardless_emi" -> PaymentMethod.CARDLESS_EMI;
             case "pay_later" -> PaymentMethod.PAY_LATER;
-            default -> PaymentMethod.COD;
+            default -> PaymentMethod.UNKNOWN;
         };
     }
 

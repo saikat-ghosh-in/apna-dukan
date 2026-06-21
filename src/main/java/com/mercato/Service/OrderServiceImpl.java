@@ -8,7 +8,6 @@ import com.mercato.Entity.fulfillment.payment.Payment;
 import com.mercato.Entity.fulfillment.payment.PaymentMethod;
 import com.mercato.Entity.fulfillment.payment.PaymentStatus;
 import com.mercato.ExceptionHandler.CustomBadRequestException;
-import com.mercato.ExceptionHandler.InsufficientInventoryException;
 import com.mercato.ExceptionHandler.ResourceNotFoundException;
 import com.mercato.Mapper.OrderMapper;
 import com.mercato.Payloads.Request.OrderCancelRequestDTO;
@@ -17,9 +16,7 @@ import com.mercato.Payloads.Response.*;
 import com.mercato.Payloads.Request.OrderCaptureRequestDTO;
 import com.mercato.Repository.AddressRepository;
 import com.mercato.Repository.OrderRepository;
-import com.mercato.Repository.ProductRepository;
 import com.mercato.Utils.AuthUtil;
-import com.mercato.Utils.CartContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,7 +37,6 @@ public class OrderServiceImpl implements OrderService {
     private final AddressRepository addressRepository;
     private final AuthUtil authUtil;
     private final CartReservationService cartReservationService;
-    private final ProductRepository productRepository;
     private final OrderLineUpdateService orderLineUpdateService;
 
     @Override
@@ -53,7 +49,8 @@ public class OrderServiceImpl implements OrderService {
             throw new CustomBadRequestException("Cart is empty");
         }
 
-        Address address = addressRepository.findByAddressId(request.getAddressId())
+        Address address = addressRepository.findByAddressIdAndUser_UserId(
+                        request.getAddressId(), user.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Address", "addressId", request.getAddressId())
                 );
@@ -62,15 +59,12 @@ public class OrderServiceImpl implements OrderService {
         CashfreeOrderResponse cashfreeOrder = cashfreeService.createOrder(order, user);
         cashfreeService.initiatePayment(
                 order,
-                PaymentMethod.getFromString(request.getPaymentMethod()),
+                PaymentMethod.UNKNOWN,
                 cashfreeOrder
         );
 
-        cart.getCartItems().forEach(this::clearCartReservationAndValidateStock);
+        cart.getCartItems().forEach(cartReservationService::validateHeld);
         orderRepository.save(order);
-
-        CartContext context = new CartContext(user.getUserId(), null);
-        cartService.clearCart(context);
 
         return new OrderPlacementResponseDTO(
                 order.getPayment().getPaymentSessionId(),
@@ -221,21 +215,6 @@ public class OrderServiceImpl implements OrderService {
         return OrderMapper.toDTO(order);
     }
 
-
-    private void clearCartReservationAndValidateStock(CartItem cartItem) {
-        cartReservationService.release(cartItem);
-        Product product = productRepository.findByProductIdForUpdate(
-                        cartItem.getProduct().getProductId()
-                )
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Product", "productId", cartItem.getProduct().getProductId()
-                ));
-        if (product.getAvailableQty() < cartItem.getQuantity()) {
-            throw new InsufficientInventoryException(
-                    product.getProductId(), product.getAvailableQty()
-            );
-        }
-    }
 
     private Order buildOrder(Cart cart, EcommUser customer, Address address) {
         List<CartItem> cartItems = cart.getCartItems();
