@@ -35,20 +35,56 @@ public class OrderReservationServiceImpl implements OrderReservationService {
     @Override
     @Transactional
     public void transferCartReservationsToOrder(Order order, Cart cart) {
+        finalizeInventoryForPaidOrder(order, cart);
+    }
+
+    @Override
+    @Transactional
+    public void finalizeInventoryForPaidOrder(Order order, Cart cart) {
         for (OrderLine orderLine : order.getOrderLines()) {
             if (orderReservationRepository.findByOrderLine_Id(orderLine.getId()).isPresent()) {
-                log.warn("Order reservation already exists for orderLine: {}", orderLine.getId());
+                releaseOrphanedCartHold(cart, orderLine);
                 continue;
             }
 
-            cart.findItemByProductId(orderLine.getProductId())
-                    .flatMap(cartItem -> cartReservationRepository
-                            .findByCartItem_CartItemId(cartItem.getCartItemId()))
-                    .ifPresentOrElse(
-                            cartReservation -> transferSingleReservation(order, orderLine, cartReservation),
-                            () -> reserveOrderLine(order, orderLine)
-                    );
+            CartReservation cartReservation = findCartReservation(cart, orderLine);
+            if (cartReservation != null) {
+                transferSingleReservation(order, orderLine, cartReservation);
+            } else {
+                reserveOrderLine(order, orderLine);
+            }
         }
+    }
+
+    private CartReservation findCartReservation(Cart cart, OrderLine orderLine) {
+        if (cart == null) {
+            return null;
+        }
+        return cart.findItemByProductId(orderLine.getProductId())
+                .flatMap(cartItem -> cartReservationRepository
+                        .findByCartItem_CartItemId(cartItem.getCartItemId()))
+                .orElse(null);
+    }
+
+    /**
+     * When poll reserved for the order but left the cart hold in place, remove the duplicate cart hold
+     * without touching the existing order reservation.
+     */
+    private void releaseOrphanedCartHold(Cart cart, OrderLine orderLine) {
+        CartReservation cartReservation = findCartReservation(cart, orderLine);
+        if (cartReservation == null) {
+            return;
+        }
+
+        Product product = productRepository.findByProductIdForUpdate(orderLine.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Product", "productId", orderLine.getProductId()
+                ));
+        product.adjustReservedQty(-cartReservation.getReservedQty());
+        productRepository.save(product);
+        cartReservationRepository.delete(cartReservation);
+        log.info("Released orphaned cart hold for product {} (order line {})",
+                orderLine.getProductId(), orderLine.getId());
     }
 
     private void transferSingleReservation(Order order, OrderLine orderLine, CartReservation cartReservation) {

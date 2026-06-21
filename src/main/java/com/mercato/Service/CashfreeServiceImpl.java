@@ -446,12 +446,7 @@ public class CashfreeServiceImpl implements CashfreeService {
                         payment.setCompletedAt(Instant.now());
                         paymentRepository.save(payment);
                     }
-                    if (!OrderStatus.CONFIRMED.equals(order.getOrderStatus())) {
-                        order.confirmOrder();
-                        recordConfirmationTransitions(order);
-                        orderReservationService.reserveForOrder(order);
-                        orderRepository.save(order);
-                    }
+                    finalizeOrderAfterPaymentSuccess(order);
                     log.info("Order {} synced to PAID/CONFIRMED from Cashfree", order.getOrderId());
                 }
                 case "ACTIVE" -> log.info("Order {} still ACTIVE on Cashfree", order.getOrderId());
@@ -491,7 +486,10 @@ public class CashfreeServiceImpl implements CashfreeService {
         Payment payment = findPaymentWithRetry(orderId);
 
         if (PaymentStatus.SUCCESS.equals(payment.getStatus())) {
-            log.info("Payment already confirmed for orderId={}", orderId);
+            log.info("Payment already confirmed for orderId={}, reconciling inventory", orderId);
+            Order order = orderRepository.findByOrderId(orderId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Order", "orderId", orderId));
+            finalizeOrderAfterPaymentSuccess(order);
             return;
         }
 
@@ -505,23 +503,7 @@ public class CashfreeServiceImpl implements CashfreeService {
         Order order = orderRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "orderId", orderId));
 
-        order.confirmOrder();
-        recordConfirmationTransitions(order);
-
-        Optional<EcommUser> buyer = userRepository.findByEmail(order.getCustomerEmail());
-        if (buyer.isPresent()) {
-            Cart cart = cartService.getCartByUser(buyer.get());
-            if (cart != null && cart.getCartItems() != null && !cart.getCartItems().isEmpty()) {
-                orderReservationService.transferCartReservationsToOrder(order, cart);
-                cartService.clearCart(new CartContext(buyer.get().getUserId(), null));
-            } else {
-                orderReservationService.reserveForOrder(order);
-            }
-        } else {
-            orderReservationService.reserveForOrder(order);
-        }
-
-        orderRepository.save(order);
+        finalizeOrderAfterPaymentSuccess(order);
 
         emailService.sendOrderConfirmationEmail(
                 order.getCustomerEmail(),
@@ -531,6 +513,24 @@ public class CashfreeServiceImpl implements CashfreeService {
         );
 
         log.info("Order confirmed via webhook: {}", orderId);
+    }
+
+    private void finalizeOrderAfterPaymentSuccess(Order order) {
+        if (!OrderStatus.CONFIRMED.equals(order.getOrderStatus())) {
+            order.confirmOrder();
+            recordConfirmationTransitions(order);
+        }
+
+        Optional<EcommUser> buyer = userRepository.findByEmail(order.getCustomerEmail());
+        Cart cart = buyer.map(cartService::getCartByUser).orElse(null);
+
+        orderReservationService.finalizeInventoryForPaidOrder(order, cart);
+
+        if (buyer.isPresent() && cart != null && !cart.isEmpty()) {
+            cartService.clearCart(new CartContext(buyer.get().getUserId(), null));
+        }
+
+        orderRepository.save(order);
     }
 
     private void handlePaymentFailed(JsonNode root) {
