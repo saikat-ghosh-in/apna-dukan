@@ -7,8 +7,11 @@ import com.mercato.Entity.fulfillment.payment.PaymentStatus;
 import com.mercato.Repository.OrderRepository;
 import com.mercato.Repository.PaymentRepository;
 import com.mercato.Repository.RefundRepository;
+import com.mercato.Repository.UserRepository;
+import com.mercato.Service.CartService;
 import com.mercato.Service.CashfreeServiceImpl;
 import com.mercato.Service.OrderReservationService;
+import com.mercato.Utils.AuthUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +35,9 @@ class CashfreePaymentWebhookTest {
     @Mock private PaymentRepository paymentRepository;
     @Mock private OrderRepository orderRepository;
     @Mock private OrderReservationService orderReservationService;
+    @Mock private CartService cartService;
+    @Mock private UserRepository userRepository;
+    @Mock private AuthUtil authUtil;
     @Mock private RestTemplate restTemplate;
     @Mock private RefundRepository refundRepository;
 
@@ -44,6 +50,9 @@ class CashfreePaymentWebhookTest {
                 paymentRepository,
                 orderRepository,
                 orderReservationService,
+                cartService,
+                userRepository,
+                authUtil,
                 restTemplate,
                 objectMapper,
                 refundRepository

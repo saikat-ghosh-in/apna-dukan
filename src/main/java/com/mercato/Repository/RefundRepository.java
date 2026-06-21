@@ -12,5 +12,7 @@ public interface RefundRepository extends JpaRepository<Refund, Long> {
 
     Optional<Refund> findByGatewayReference(String gatewayReference);
 
+    Optional<Refund> findByRefundId(String refundId);
+
     boolean existsByPayment_Id(Long paymentId);
 }

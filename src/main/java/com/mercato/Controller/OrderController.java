@@ -28,7 +28,8 @@ public class OrderController {
     private final AuthUtil authUtil;
 
     @PostMapping("/orders/capture")
-    public ResponseEntity<OrderPlacementResponseDTO> placeOrder(@RequestBody OrderCaptureRequestDTO orderCaptureRequestDTO) {
+    public ResponseEntity<OrderPlacementResponseDTO> placeOrder(
+            @Valid @RequestBody OrderCaptureRequestDTO orderCaptureRequestDTO) {
 
         OrderPlacementResponseDTO order = orderService.placeOrder(orderCaptureRequestDTO);
         return new ResponseEntity<>(order, HttpStatus.CREATED);
