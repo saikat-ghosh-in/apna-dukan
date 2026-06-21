@@ -13,4 +13,6 @@ public interface EmailService {
     void sendOrderConfirmationEmail(String to, String username, String orderId, BigDecimal totalAmount);
 
     void sendPasswordResetEmail(String to, String username, String token);
+
+    void sendOrderShippedEmail(String to, String username, String orderId);
 }

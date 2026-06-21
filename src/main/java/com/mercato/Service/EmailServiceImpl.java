@@ -101,6 +101,20 @@ public class EmailServiceImpl implements EmailService {
     }
 
 
+    @Async
+    @Override
+    public void sendOrderShippedEmail(String to, String username, String orderId) {
+        try {
+            String subject = "Your Order Has Shipped - Mercato #" + orderId;
+            String body = buildOrderShippedEmailBody(username, orderId);
+            sendHtmlEmail(to, subject, body);
+            log.info("Order shipped email sent to: {} for order {}", to, orderId);
+        } catch (MessagingException e) {
+            log.error("Failed to send order shipped email to: {} for order {}", to, orderId, e);
+        }
+    }
+
+
     private void sendHtmlEmail(String to, String subject, String htmlBody) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -307,5 +321,41 @@ public class EmailServiceImpl implements EmailService {
                 </body>
                 </html>
                 """.formatted(username, resetLink, resetLink);
+    }
+
+    private String buildOrderShippedEmailBody(String username, String orderId) {
+        String ordersUrl = frontendUrl + "/orders?orderId=" + orderId;
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                        .header { background-color: #111827; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                        .content { padding: 30px; background-color: #f9fafb; border-radius: 0 0 8px 8px; }
+                        .button { display: inline-block; padding: 12px 24px; background-color: #2563eb;
+                                  color: white; text-decoration: none; border-radius: 8px; margin: 20px 0; }
+                        .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>Order Shipped</h1>
+                        </div>
+                        <div class="content">
+                            <h2>Hi %s,</h2>
+                            <p>Part or all of your order <strong>#%s</strong> has shipped.</p>
+                            <p>Track progress and view details in your account.</p>
+                            <a href="%s" class="button">View Order</a>
+                        </div>
+                        <div class="footer">
+                            <p>&copy; 2026 Mercato. All rights reserved.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """.formatted(username, orderId, ordersUrl);
     }
 }

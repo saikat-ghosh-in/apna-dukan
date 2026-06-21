@@ -29,6 +29,7 @@ public class OrderLineUpdateServiceImpl implements OrderLineUpdateService {
     private final OrderRepository orderRepository;
     private final OrderReservationService orderReservationService;
     private final RefundService refundService;
+    private final ShipmentNotificationService shipmentNotificationService;
     private final AuthUtil authUtil;
 
     @Override
@@ -130,6 +131,10 @@ public class OrderLineUpdateServiceImpl implements OrderLineUpdateService {
 
         syncOrderStatus(orderLine.getOrder());
         orderLineRepository.save(orderLine);
+
+        if (request.getAction() == OrderLineAction.SHIP) {
+            shipmentNotificationService.notifyShippedIfNeeded(orderLine.getOrder());
+        }
 
         return OrderLineMapper.toDTO(orderLine);
     }

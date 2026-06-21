@@ -108,6 +108,9 @@ public class Order {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @Column(name = "shipment_email_sent_at")
+    private Instant shipmentEmailSentAt;
+
 
     @Transient
     public BigDecimal getRevenue() {
