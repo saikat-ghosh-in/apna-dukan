@@ -15,9 +15,10 @@ export const selectCharges = createSelector(
     (state) => state.cart.shipping,
     (state) => state.cart.platformFee,
     (state) => state.cart.processingAndHandling,
+    (state) => state.cart.tax,
     (state) => state.cart.totalCharges,
-    (shipping, platformFee, processingAndHandling, totalCharges) => ({
-        shipping, platformFee, processingAndHandling, totalCharges
+    (shipping, platformFee, processingAndHandling, tax, totalCharges) => ({
+        shipping, platformFee, processingAndHandling, tax, totalCharges
     })
 );
 

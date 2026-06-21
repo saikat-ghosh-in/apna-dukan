@@ -25,7 +25,7 @@ const Cart = () => {
     const isCartEmpty = useSelector(selectIsCartEmpty);
     const subtotal = useSelector(selectSubtotal);
     const total = useSelector(selectTotal);
-    const { shipping, platformFee, processingAndHandling } = useSelector(selectCharges);
+    const { shipping, platformFee, processingAndHandling, tax } = useSelector(selectCharges);
     const pendingSync = useSelector(selectCartPendingSync);
     const cartLoading = useSelector(selectCartLoading);
     const cartError = useSelector(selectCartError);
@@ -195,6 +195,9 @@ const Cart = () => {
                                 </div>
                                 <SummaryRow label="Platform Fee" value={formatCurrency(platformFee)} />
                                 <SummaryRow label="Processing & Handling" value={formatCurrency(processingAndHandling)} />
+                                {tax > 0 && (
+                                    <SummaryRow label="Estimated Tax" value={formatCurrency(tax)} />
+                                )}
                             </div>
 
                             <div className="flex justify-between items-center py-4">

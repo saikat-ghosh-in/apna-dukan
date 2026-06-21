@@ -509,6 +509,9 @@ public class CashfreeServiceImpl implements CashfreeService {
                     order.getCustomerEmail(),
                     order.getCustomerName(),
                     order.getOrderId(),
+                    order.getSubtotal(),
+                    order.getTaxAmount(),
+                    order.getCharges(),
                     order.getTotalAmount()
             );
         }

@@ -51,6 +51,7 @@ const cartPersistConfig = {
     "shipping",
     "platformFee",
     "processingAndHandling",
+    "tax",
     "totalCharges",
     "total",
     "cartId"

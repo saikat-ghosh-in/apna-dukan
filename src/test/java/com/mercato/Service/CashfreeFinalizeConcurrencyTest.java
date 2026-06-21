@@ -145,7 +145,7 @@ class CashfreeFinalizeConcurrencyTest {
         doAnswer(inv -> {
             emailSendCount.incrementAndGet();
             return null;
-        }).when(emailService).sendOrderConfirmationEmail(any(), any(), any(), any());
+        }).when(emailService).sendOrderConfirmationEmail(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -167,6 +167,9 @@ class CashfreeFinalizeConcurrencyTest {
                                 order.getCustomerEmail(),
                                 order.getCustomerName(),
                                 order.getOrderId(),
+                                order.getSubtotal(),
+                                order.getTaxAmount(),
+                                order.getCharges(),
                                 order.getTotalAmount()
                         );
                     }

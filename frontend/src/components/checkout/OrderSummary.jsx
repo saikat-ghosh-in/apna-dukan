@@ -1,6 +1,6 @@
 import { formatCurrency } from "../../utils/formatCurrency";
 
-const OrderSummary = ({ cartWithProducts, cartQty, subtotal, shipping, platformFee, processingAndHandling, total }) => (
+const OrderSummary = ({ cartWithProducts, cartQty, subtotal, shipping, platformFee, processingAndHandling, tax, total }) => (
   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sticky top-4">
     <h2 className="text-base font-bold text-gray-900 mb-4">Order Summary</h2>
 
@@ -42,6 +42,9 @@ const OrderSummary = ({ cartWithProducts, cartQty, subtotal, shipping, platformF
       />
       <SummaryRow label="Platform Fee" value={formatCurrency(platformFee)} />
       <SummaryRow label="Processing & Handling" value={formatCurrency(processingAndHandling)} />
+      {tax > 0 && (
+        <SummaryRow label="Estimated Tax" value={formatCurrency(tax)} />
+      )}
     </div>
 
     <div className="flex justify-between items-center pt-4">

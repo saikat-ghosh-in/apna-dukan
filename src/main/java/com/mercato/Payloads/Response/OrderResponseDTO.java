@@ -22,6 +22,7 @@ public class OrderResponseDTO {
 
     private final String currency;
     private final BigDecimal subTotal;
+    private final BigDecimal taxAmount;
     private final BigDecimal charges;
     private final BigDecimal totalAmount;
     private final boolean inventoryFinalizationFailed;

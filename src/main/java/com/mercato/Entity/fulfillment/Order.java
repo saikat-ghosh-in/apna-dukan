@@ -89,6 +89,9 @@ public class Order {
     @Column(nullable = false, precision = 15, scale = 2, updatable = false)
     private BigDecimal charges;
 
+    @Column(name = "tax_amount", nullable = false, precision = 15, scale = 2, updatable = false)
+    private BigDecimal taxAmount = BigDecimal.ZERO;
+
     @Column(nullable = false, precision = 15, scale = 2, updatable = false)
     private BigDecimal totalAmount;
 

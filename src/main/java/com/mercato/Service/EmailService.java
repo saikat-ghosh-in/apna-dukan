@@ -10,7 +10,8 @@ public interface EmailService {
 
     void sendReactivationConfirmationEmail(String to, String username);
 
-    void sendOrderConfirmationEmail(String to, String username, String orderId, BigDecimal totalAmount);
+    void sendOrderConfirmationEmail(String to, String username, String orderId, BigDecimal subtotal,
+                                   BigDecimal taxAmount, BigDecimal charges, BigDecimal totalAmount);
 
     void sendPasswordResetEmail(String to, String username, String token);
 

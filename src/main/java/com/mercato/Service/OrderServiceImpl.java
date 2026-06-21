@@ -262,8 +262,9 @@ public class OrderServiceImpl implements OrderService {
 
         order.setCurrency("INR");
         order.setSubtotal(cart.getSubtotal());
-        order.setCharges(cart.getTotalCharges());
-        order.setTotalAmount(order.getSubtotal().add(order.getCharges()));
+        order.setTaxAmount(cart.getChargeAmount(com.mercato.Entity.cart.ChargeType.TAX));
+        order.setCharges(cart.getTotalCharges().subtract(order.getTaxAmount()));
+        order.setTotalAmount(order.getSubtotal().add(order.getTaxAmount()).add(order.getCharges()));
 
         return order;
     }

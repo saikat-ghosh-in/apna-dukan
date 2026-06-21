@@ -9,6 +9,7 @@ const initialState = {
     shipping: 0,
     platformFee: 0,
     processingAndHandling: 0,
+    tax: 0,
     totalCharges: 0,
     updateSeq: 0
 };
@@ -53,11 +54,12 @@ export const cartReducer = (state = initialState, action) => {
                 canAddMore: item.canAddMore ?? true,
             }));
 
-            let shipping = 0, platformFee = 0, processingAndHandling = 0;
+            let shipping = 0, platformFee = 0, processingAndHandling = 0, tax = 0;
             (cart.charges || []).forEach((charge) => {
                 if (charge.type === "SHIPPING") shipping = charge.amount;
                 else if (charge.type === "PLATFORM_FEE") platformFee = charge.amount;
                 else if (charge.type === "PROCESSING_AND_HANDLING") processingAndHandling = charge.amount;
+                else if (charge.type === "TAX") tax = charge.amount;
             });
 
             return {
@@ -69,6 +71,7 @@ export const cartReducer = (state = initialState, action) => {
                 shipping,
                 platformFee,
                 processingAndHandling,
+                tax,
                 totalCharges: cart.totalCharges || 0,
                 cartLoaded: true,
                 cartLoading: false,

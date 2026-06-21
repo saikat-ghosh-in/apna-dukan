@@ -16,6 +16,8 @@ public class CartPricingServiceImpl implements CartPricingService {
     private BigDecimal CART_SHIPPING_CHARGE;
     @Value("${cart.platform.fee}")
     private BigDecimal CART_PLATFORM_FEE;
+    @Value("${cart.tax.rate.percent:0}")
+    private BigDecimal TAX_RATE_PERCENT;
 
     @Override
     public void applyCharges(Cart cart) {
@@ -27,9 +29,27 @@ public class CartPricingServiceImpl implements CartPricingService {
             return;
         }
 
+        applyTax(cart, subtotal);
         applyShipping(cart, subtotal);
         applyPlatformFee(cart);
         applyProcessing(cart, cartQty);
+    }
+
+    private void applyTax(Cart cart, BigDecimal subtotal) {
+        if (TAX_RATE_PERCENT.compareTo(BigDecimal.ZERO) <= 0) {
+            cart.removeCharge(ChargeType.TAX);
+            return;
+        }
+
+        BigDecimal tax = subtotal
+                .multiply(TAX_RATE_PERCENT)
+                .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+
+        cart.addOrUpdateCharge(
+                ChargeType.TAX,
+                tax,
+                "Estimated Tax (" + TAX_RATE_PERCENT.stripTrailingZeros().toPlainString() + "%)"
+        );
     }
 
     private void applyShipping(Cart cart, BigDecimal subtotal) {
