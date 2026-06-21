@@ -39,15 +39,11 @@ Production: copy the JAR to the Oracle VM, set `SPRING_PROFILES_ACTIVE=prod` and
 
 ### Existing database schema (order_snapshot)
 
-Commits after the initial deploy added `shipment_email_sent_at`, `tax_amount`, and `inventory_finalization_failed` on `order_snapshot`. With `ddl-auto=update`, Hibernate adds them automatically on **empty** databases. On a database that already has orders, PostgreSQL rejects `ADD COLUMN ... NOT NULL` without a default — Hibernate logs a warning and the column is never created.
+Commits after the initial deploy added `shipment_email_sent_at` and `inventory_finalization_failed` on `order_snapshot`. With `ddl-auto=update`, Hibernate adds them automatically on **empty** databases thanks to `@ColumnDefault` on the entity fields. On a database that already has orders, PostgreSQL may reject `ADD COLUMN ... NOT NULL` without a default — Hibernate logs a warning and the column is never created.
 
-**Fresh clone:** no action needed after the `@ColumnDefault` entity fix (ddl-auto emits `DEFAULT`).
+**Fresh clone:** no action needed after the `@ColumnDefault` entity fix.
 
-**Existing populated DB:** run once against the target database:
-
-```bash
-psql "$DB_URL" -f backend/scripts/patch-order-snapshot-columns.sql
-```
+**Existing populated DB:** if a column is still missing after deploy, run a one-time manual `ALTER TABLE` on the target database (add the column with an appropriate default, then backfill if needed).
 
 ## Frontend
 

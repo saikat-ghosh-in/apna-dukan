@@ -258,7 +258,7 @@ const Footer = () => {
 const HomePage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { categories } = useSelector(s => s.categories);
+  const categories = useSelector(s => s.categories.categories);
   const sellers = useSelector(s => s.sellers.sellers);
 
   const [products, setProducts] = useState([]);
@@ -268,9 +268,9 @@ const HomePage = () => {
   const [showAllCats, setShowAllCats] = useState(false);
 
   useEffect(() => {
-    if (!categories?.length) dispatch(fetchCategories());
-    if (!sellers?.length) dispatch(fetchSellers());
-  }, []);
+    if (!Array.isArray(categories) || categories.length === 0) dispatch(fetchCategories());
+    if (!Array.isArray(sellers) || sellers.length === 0) dispatch(fetchSellers());
+  }, [dispatch, categories, sellers]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -295,8 +295,8 @@ const HomePage = () => {
     fetchDeals();
   }, []);
 
-  const topSellers = sellers?.slice(0, 4) ?? [];
-  const allCats = categories ?? [];
+  const topSellers = Array.isArray(sellers) ? sellers.slice(0, 4) : [];
+  const allCats = Array.isArray(categories) ? categories : [];
   const VISIBLE_COUNT = 8;
   const visibleCats = showAllCats ? allCats : allCats.slice(0, VISIBLE_COUNT);
   const hasMore = allCats.length > VISIBLE_COUNT;

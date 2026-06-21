@@ -2,6 +2,8 @@
 
 Mercato is a multi-seller e-commerce marketplace aimed at the Indian market — INR pricing, domestic payment methods, seller fulfillment dashboards alongside the customer storefront. The live demo is at [mercato-in.netlify.app](https://mercato-in.netlify.app).
 
+Listed product prices are tax-inclusive — GST and other levies are already baked into selling price. Checkout only adds shipping, platform, and processing fees; no separate tax line.
+
 This repo is a monorepo: the Spring Boot API lives in `backend/`, and the React storefront lives in `frontend/`. I kept them together so order/payment/inventory changes stay in one pull request instead of chasing two repos.
 
 ---
@@ -101,7 +103,7 @@ Three schedulers keep inventory honest without manual intervention:
 ## What is not built yet
 
 - Promo codes / coupons
-- GST / legal tax breakdown (placeholder tax line exists; not compliance-grade)
+- GST invoice / legal tax breakdown on receipts (prices are tax-inclusive; no separate checkout tax line)
 - Product reviews and ratings
 - Returns / RMA after delivery
 - Webhook idempotency store (deduplicate Cashfree event IDs)

@@ -623,12 +623,6 @@ const OrderDetails = ({ orderId }) => {
                   <span className="text-gray-500">Subtotal</span>
                   <span className="font-semibold text-gray-800">{formatCurrency(order.subTotal)}</span>
                 </div>
-                {(order.taxAmount ?? 0) > 0 && (
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-gray-500">Estimated Tax</span>
-                    <span className="font-semibold text-gray-800">{formatCurrency(order.taxAmount)}</span>
-                  </div>
-                )}
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-gray-500">Fees</span>
                   <span className="font-semibold text-gray-800">{formatCurrency(order.charges)}</span>

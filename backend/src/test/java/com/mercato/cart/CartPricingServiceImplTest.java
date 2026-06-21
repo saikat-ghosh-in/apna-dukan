@@ -24,49 +24,45 @@ class CartPricingServiceImplTest {
         ReflectionTestUtils.setField(pricingService, "CART_SHIPPING_THRESHOLD", BigDecimal.valueOf(500));
         ReflectionTestUtils.setField(pricingService, "CART_SHIPPING_CHARGE", BigDecimal.valueOf(50));
         ReflectionTestUtils.setField(pricingService, "CART_PLATFORM_FEE", BigDecimal.valueOf(12));
-        ReflectionTestUtils.setField(pricingService, "TAX_RATE_PERCENT", BigDecimal.valueOf(18));
     }
 
     @Test
-    void applyCharges_addsTaxAsPercentOfSubtotal() {
-        Cart cart = cartWithSubtotal(BigDecimal.valueOf(1000));
+    void applyCharges_addsShippingWhenBelowThreshold() {
+        Cart cart = cartWithSubtotal(BigDecimal.valueOf(400));
 
         pricingService.applyCharges(cart);
 
-        assertEquals(
-                BigDecimal.valueOf(180.00).setScale(2),
-                cart.getChargeAmount(ChargeType.TAX)
-        );
-        assertTrue(cart.findCharge(ChargeType.TAX).get().getDescription().contains("18%"));
+        assertEquals(BigDecimal.valueOf(50), cart.getChargeAmount(ChargeType.SHIPPING));
     }
 
     @Test
-    void applyCharges_roundsTaxToTwoDecimalPlaces() {
-        Cart cart = cartWithSubtotal(new BigDecimal("99.99"));
+    void applyCharges_skipsShippingWhenAboveThreshold() {
+        Cart cart = cartWithSubtotal(BigDecimal.valueOf(600));
 
         pricingService.applyCharges(cart);
 
-        assertEquals(new BigDecimal("18.00"), cart.getChargeAmount(ChargeType.TAX));
+        assertEquals(BigDecimal.ZERO, cart.getChargeAmount(ChargeType.SHIPPING));
     }
 
     @Test
-    void applyCharges_clearsTaxWhenSubtotalIsZero() {
+    void applyCharges_addsPlatformFee() {
+        Cart cart = cartWithSubtotal(BigDecimal.valueOf(100));
+
+        pricingService.applyCharges(cart);
+
+        assertEquals(BigDecimal.valueOf(12), cart.getChargeAmount(ChargeType.PLATFORM_FEE));
+        assertTrue(cart.findCharge(ChargeType.PLATFORM_FEE).get().getDescription().contains("Platform Fee"));
+    }
+
+    @Test
+    void applyCharges_clearsChargesWhenSubtotalIsZero() {
         Cart cart = new Cart();
-        cart.addOrUpdateCharge(ChargeType.TAX, BigDecimal.TEN, "Estimated Tax");
+        cart.addOrUpdateCharge(ChargeType.SHIPPING, BigDecimal.TEN, "Standard Shipping");
+        cart.addOrUpdateCharge(ChargeType.PLATFORM_FEE, BigDecimal.TEN, "Platform Fee");
 
         pricingService.applyCharges(cart);
 
-        assertTrue(cart.findCharge(ChargeType.TAX).isEmpty());
-    }
-
-    @Test
-    void applyCharges_skipsTaxWhenRateIsZero() {
-        ReflectionTestUtils.setField(pricingService, "TAX_RATE_PERCENT", BigDecimal.ZERO);
-        Cart cart = cartWithSubtotal(BigDecimal.valueOf(500));
-
-        pricingService.applyCharges(cart);
-
-        assertTrue(cart.findCharge(ChargeType.TAX).isEmpty());
+        assertTrue(cart.getCharges().isEmpty());
     }
 
     private Cart cartWithSubtotal(BigDecimal unitPrice) {

@@ -5,11 +5,13 @@ const initialState = {
 
 export const categoryReducer = (state = initialState, action) => {
     switch (action.type) {
-        case "FETCH_CATEGORIES":
+        case "FETCH_CATEGORIES": {
+            const categories = Array.isArray(action.payload) ? action.payload : [];
             return {
-                categories: action.payload,
-                totalCategories: action.payload.length
+                categories,
+                totalCategories: categories.length
             };
+        }
         default:
             return state;
     }

@@ -36,7 +36,7 @@ const Checkout = () => {
   const cartQty = useSelector(selectCartQty);
   const subtotal = useSelector(selectSubtotal);
   const total = useSelector(selectTotal);
-  const { shipping, platformFee, processingAndHandling, tax } = useSelector(selectCharges);
+  const { shipping, platformFee, processingAndHandling } = useSelector(selectCharges);
 
   const [cartWithProducts, setCartWithProducts] = useState([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -222,7 +222,6 @@ const Checkout = () => {
             shipping={shipping}
             platformFee={platformFee}
             processingAndHandling={processingAndHandling}
-            tax={tax}
             total={total}
           />
         </div>

@@ -75,11 +75,11 @@ public class EmailServiceImpl implements EmailService {
     @Async
     @Override
     public void sendOrderConfirmationEmail(String to, String username, String orderId, BigDecimal subtotal,
-                                         BigDecimal taxAmount, BigDecimal charges, BigDecimal totalAmount) {
+                                         BigDecimal charges, BigDecimal totalAmount) {
         try {
             String subject = "Order Confirmed - Mercato #" + orderId;
             String body = buildOrderConfirmationEmailBody(
-                    username, orderId, subtotal, taxAmount, charges, totalAmount);
+                    username, orderId, subtotal, charges, totalAmount);
             sendHtmlEmail(to, subject, body);
             log.info("Order confirmation email sent to: {} for order {}", to, orderId);
         } catch (MessagingException e) {
@@ -250,7 +250,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     private String buildOrderConfirmationEmailBody(String username, String orderId, BigDecimal subtotal,
-                                                   BigDecimal taxAmount, BigDecimal charges,
+                                                   BigDecimal charges,
                                                    BigDecimal totalAmount) {
         String ordersUrl = frontendUrl + "/orders?orderId=" + orderId;
         return """
@@ -277,7 +277,6 @@ public class EmailServiceImpl implements EmailService {
                             <p>We've received your payment and your order is confirmed.</p>
                             <p><strong>Order ID:</strong> %s</p>
                             <p><strong>Subtotal:</strong> INR %s</p>
-                            <p><strong>Estimated tax:</strong> INR %s</p>
                             <p><strong>Fees:</strong> INR %s</p>
                             <p><strong>Total paid:</strong> INR %s</p>
                             <a href="%s" class="button">View Order</a>
@@ -293,7 +292,6 @@ public class EmailServiceImpl implements EmailService {
                 username,
                 orderId,
                 subtotal.toPlainString(),
-                taxAmount.toPlainString(),
                 charges.toPlainString(),
                 totalAmount.toPlainString(),
                 ordersUrl

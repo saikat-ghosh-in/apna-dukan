@@ -37,7 +37,6 @@ public class OrderMapper {
                 orderLineDTOs,
                 order.getCurrency(),
                 order.getSubtotal(),
-                order.getTaxAmount(),
                 order.getCharges(),
                 order.getTotalAmount(),
                 order.isInventoryFinalizationFailed(),

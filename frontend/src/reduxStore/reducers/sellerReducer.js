@@ -5,11 +5,13 @@ const initialState = {
 
 export const sellerReducer = (state = initialState, action) => {
     switch (action.type) {
-        case "FETCH_SELLERS":
+        case "FETCH_SELLERS": {
+            const sellers = Array.isArray(action.payload) ? action.payload : [];
             return {
-                sellers: action.payload,
-                totalSellers: action.payload.length,
+                sellers,
+                totalSellers: sellers.length,
             };
+        }
         default:
             return state;
     }

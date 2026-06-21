@@ -6,7 +6,9 @@ import {
 } from "../utils/tokenManager";
 
 const api = axios.create({
-    baseURL: `${import.meta.env.VITE_BACKEND_BASE_URL}/api`,
+    baseURL: import.meta.env.VITE_BACKEND_BASE_URL
+        ? `${import.meta.env.VITE_BACKEND_BASE_URL}/api`
+        : "/api",
     paramsSerializer: (params) => {
         return Object.entries(params)
             .map(([key, val]) => `${key}=${encodeURIComponent(val)}`)
