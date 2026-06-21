@@ -13,7 +13,10 @@ export const authenticateUser = (loginRequest, navigate, resetForm, redirect = "
         dispatch({ type: "SET_USER_DETAILS", payload: userDetails });
 
         resetForm();
-        navigate(redirect.startsWith("/") ? redirect : "/");
+        const destination = redirect.startsWith("/")
+            ? decodeURIComponent(redirect)
+            : "/";
+        navigate(destination);
         dispatch(syncCartFromBackend());
     } catch (error) {
         toast.error(error?.response?.data?.message || "Oops! Something went wrong!");

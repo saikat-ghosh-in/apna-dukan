@@ -155,12 +155,13 @@ const CartItem = ({ productId, product, cartItemData }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const cartItem = useSelector(selectCartItemByProductId(productId));
+  const updateSeq = useSelector((state) => state.cart.updateSeq);
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Reset isUpdating when cartItem updates (after Redux sync completes)
   useEffect(() => {
     setIsUpdating(false);
-  }, [cartItem?.quantity, cartItem?.lineTotal]);
+  }, [cartItem?.quantity, cartItem?.lineTotal, updateSeq]);
 
   if (!cartItem) return null;
 

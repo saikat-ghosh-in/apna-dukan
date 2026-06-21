@@ -1,4 +1,5 @@
 import axios from "axios";
+import toast from "react-hot-toast";
 import {
     getActiveToken, getUserData, setGuestToken,
     clearUserToken, isTokenExpired
@@ -16,7 +17,9 @@ const api = axios.create({
 const PROTECTED_ENDPOINTS = [
     "/user/",
     "/admin/",
-    "/seller/"
+    "/seller/",
+    "/orders",
+    "/cart"
 ];
 
 const isProtectedEndpoint = (url) => {

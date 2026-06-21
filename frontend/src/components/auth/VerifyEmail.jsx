@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { MdCheckCircle, MdCancel, MdHourglassEmpty, MdArrowForward } from "react-icons/md";
+import { MdCheckCircle, MdCancel, MdHourglassEmpty, MdArrowForward, MdEmail, MdRefresh } from "react-icons/md";
+import toast from "react-hot-toast";
 import api from "../../backend/api";
 
 const VerifyEmail = () => {

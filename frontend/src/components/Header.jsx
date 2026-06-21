@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { logOutUser } from "../reduxStore/actions/authActions";
 import { isTokenExpired } from "../utils/tokenManager";
+import { selectCartQty } from "../reduxStore/selectors/cartSelectors";
 import profilePlaceholderImage from "../assets/profile-placeholder.png";
 
 const Header = () => {
@@ -18,7 +19,7 @@ const Header = () => {
 
     const user = useSelector((state) => state.auth?.user);
     const userDetails = useSelector((state) => state.auth?.userDetails);
-    const itemCount = useSelector((state) => state.cartDetails?.cartQty || 0);
+    const itemCount = useSelector(selectCartQty);
 
     const imageSrc = userDetails?.profileImageUrl ?? profilePlaceholderImage;
     const isTokenValid = user?.token && !isTokenExpired(user.tokenExpirationTime);
@@ -33,8 +34,8 @@ const Header = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
 
-    const isAdmin = user?.roles?.includes("ROLE_ADMIN");
-    const isSeller = user?.roles?.includes("ROLE_SELLER");
+    const isAdmin = userDetails?.roles?.includes("ROLE_ADMIN");
+    const isSeller = userDetails?.roles?.includes("ROLE_SELLER");
 
     const initials = userDetails?.firstName
         ? `${userDetails.firstName[0]}${userDetails.lastName?.[0] ?? ""}`.toUpperCase()

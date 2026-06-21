@@ -9,7 +9,8 @@ const initialState = {
     shipping: 0,
     platformFee: 0,
     processingAndHandling: 0,
-    totalCharges: 0
+    totalCharges: 0,
+    updateSeq: 0
 };
 
 export const cartReducer = (state = initialState, action) => {
@@ -20,6 +21,9 @@ export const cartReducer = (state = initialState, action) => {
 
         case "CART_IDLE":
             return { ...state, cartLoading: false };
+
+        case "CART_ITEM_UPDATE_FAILED":
+            return { ...state, cartLoading: false, updateSeq: state.updateSeq + 1 };
 
         case "UPDATE_CART_LOCAL": {
             const { productId, newQuantity } = action.payload;
@@ -68,7 +72,8 @@ export const cartReducer = (state = initialState, action) => {
                 totalCharges: cart.totalCharges || 0,
                 cartLoaded: true,
                 cartLoading: false,
-                cartError: null
+                cartError: null,
+                updateSeq: state.updateSeq + 1
             };
         }
 

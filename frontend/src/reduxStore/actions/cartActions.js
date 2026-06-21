@@ -70,6 +70,7 @@ export const updateCartItemQuantity = (productId, newQuantity) => (dispatch, get
       if (data.warning) showWarningToast(data.warning);
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to update quantity");
+      dispatch({ type: "CART_ITEM_UPDATE_FAILED", payload: productId });
     }
   }, 500);
 };
