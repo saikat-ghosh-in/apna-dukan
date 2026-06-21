@@ -85,6 +85,7 @@ function App() {
                 <Route path="cashfree-payment" element={<CashfreePayment />} />
                 <Route path="payment-confirmation" element={<PaymentConfirmation />} />
               </Route>
+              <Route path='/payment-confirmation' element={<PaymentConfirmation />} />
               <Route path='/orders' element={<Orders />} />
             </Route>
 

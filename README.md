@@ -64,7 +64,7 @@ Here is the path a paid order actually takes through the system.
 
 **2. Order capture** — `POST /orders/capture` (`OrderServiceImpl.placeOrder`) validates the cart is non-empty, resolves the shipping address with an ownership check, builds an `Order` in `CREATED` status with snapshotted lines, creates a Cashfree order, and stores a `Payment` in `INITIATED` with the session ID. Before saving, it runs `validateHeld()` on each cart line so checkout fails fast if a hold expired. The cart is left intact.
 
-**3. Payment** — The frontend loads Cashfree’s JS SDK (`CashfreePayment.jsx`) with the session ID and sends the customer through their hosted flow. On return, `PaymentConfirmation.jsx` lands on `/payment-confirmation?order_id=…`.
+**3. Payment** — The frontend loads Cashfree’s JS SDK (`CashfreePayment.jsx`) with the session ID and sends the customer through their hosted flow. On return, `PaymentConfirmation.jsx` lands on `/checkout/payment-confirmation?order_id=…` (`CASHFREE_RETURN_URL` must match; `/payment-confirmation` is kept as an alias).
 
 **4. Confirmation via webhook and poll** — Cashfree notifies the backend asynchronously (`handleWebhookEvent` → `PAYMENT_SUCCESS`), and the confirmation page polls `POST /orders/{id}/sync-payment-refund`, which calls `syncOrderStatus` when the Cashfree order is `PAID`. Both paths converge on the same method: `finalizeOrderAfterPaymentSuccess()` in `CashfreeServiceImpl`.
 
