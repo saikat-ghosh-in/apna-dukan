@@ -38,6 +38,7 @@ public class OrderServiceImpl implements OrderService {
     private final AuthUtil authUtil;
     private final CartReservationService cartReservationService;
     private final OrderLineUpdateService orderLineUpdateService;
+    private final OrderRetryHoldService orderRetryHoldService;
 
     @Override
     @Transactional
@@ -82,6 +83,8 @@ public class OrderServiceImpl implements OrderService {
         if (!OrderStatus.CREATED.equals(order.getOrderStatus())) {
             throw new CustomBadRequestException("Order is not in a payable state");
         }
+
+        orderRetryHoldService.ensureCartHoldsForRetry(order, currentUser);
 
         return cashfreeService.retryPayment(order, currentUser);
     }

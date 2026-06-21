@@ -111,6 +111,9 @@ public class Order {
     @Column(name = "shipment_email_sent_at")
     private Instant shipmentEmailSentAt;
 
+    @Column(name = "inventory_finalization_failed", nullable = false)
+    private boolean inventoryFinalizationFailed = false;
+
 
     @Transient
     public BigDecimal getRevenue() {

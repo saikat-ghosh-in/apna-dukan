@@ -28,7 +28,11 @@ export const retryPayment = async ({ order, dispatch, navigate, setLoading }) =>
     );
     navigate("/checkout/cashfree-payment");
   } catch (err) {
-    toast.error(err?.response?.data?.message || "Failed to retry payment. Please try again.");
+    const data = err?.response?.data;
+    const message = data?.productId
+      ? `Stock is no longer held for this order (${data.availableQty} available). Add items to your cart and try again.`
+      : data?.message || "Failed to retry payment. Please try again.";
+    toast.error(message);
   } finally {
     setLoading(false);
   }

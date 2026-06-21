@@ -39,6 +39,7 @@ public class OrderMapper {
                 order.getSubtotal(),
                 order.getCharges(),
                 order.getTotalAmount(),
+                order.isInventoryFinalizationFailed(),
                 order.getCreatedAt(),
                 order.getUpdatedAt()
         );

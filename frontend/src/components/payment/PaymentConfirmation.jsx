@@ -40,6 +40,12 @@ const PaymentConfirmation = () => {
         const currentStatus = order?.paymentSummary?.status;
         setPaymentStatus(currentStatus);
 
+        if (currentStatus === "SUCCESS" && order?.inventoryFinalizationFailed) {
+          dispatch(clearPaymentData());
+          setStatus("inventory_failed");
+          return true;
+        }
+
         if (currentStatus === "SUCCESS") {
           dispatch(clearCart());
           dispatch(clearPaymentData());
@@ -91,6 +97,40 @@ const PaymentConfirmation = () => {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
           </svg>
           <p className="text-gray-500 text-sm">Confirming your payment...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "inventory_failed") {
+    return (
+      <div className="bg-gray-50 min-h-screen py-6 flex items-center justify-center">
+        <div className="max-w-md w-full mx-auto px-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-amber-50 rounded-2xl">
+                <FaTimesCircle size={40} className="text-amber-500" />
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Payment received, stock unavailable</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Your payment went through, but the items are no longer held in stock. Please contact support or try placing a new order.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => navigate(orderId ? `/orders?orderId=${orderId}` : "/orders")}
+                className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold rounded-xl transition-all"
+              >
+                View Order
+              </button>
+              <button
+                onClick={() => navigate("/products")}
+                className="w-full py-3 bg-blue-50 hover:bg-blue-100 text-blue-600 text-sm font-bold rounded-xl transition-colors"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );

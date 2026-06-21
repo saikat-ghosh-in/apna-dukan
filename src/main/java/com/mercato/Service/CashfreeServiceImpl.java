@@ -7,6 +7,7 @@ import com.mercato.Entity.cart.Cart;
 import com.mercato.Entity.fulfillment.*;
 import com.mercato.Entity.fulfillment.payment.*;
 import com.mercato.ExceptionHandler.CustomBadRequestException;
+import com.mercato.ExceptionHandler.InsufficientInventoryException;
 import com.mercato.ExceptionHandler.ResourceNotFoundException;
 import com.mercato.Payloads.Response.CashfreeOrderResponse;
 import com.mercato.Repository.OrderRepository;
@@ -521,15 +522,25 @@ public class CashfreeServiceImpl implements CashfreeService {
     boolean finalizeOrderAfterPaymentSuccess(Order order) {
         boolean wasAlreadyConfirmed = OrderStatus.CONFIRMED.equals(order.getOrderStatus());
 
+        Optional<EcommUser> buyer = userRepository.findByEmail(order.getCustomerEmail());
+        Cart cart = buyer.map(cartService::getCartByUser).orElse(null);
+
+        boolean inventoryOwned;
+        try {
+            inventoryOwned = orderReservationService.finalizeInventoryForPaidOrder(order, cart);
+        } catch (InsufficientInventoryException ex) {
+            log.warn("Inventory finalization failed for order {}: {}", order.getOrderId(), ex.getMessage());
+            order.setInventoryFinalizationFailed(true);
+            orderRepository.save(order);
+            return false;
+        }
+
+        order.setInventoryFinalizationFailed(false);
+
         if (!wasAlreadyConfirmed) {
             order.confirmOrder();
             recordConfirmationTransitions(order);
         }
-
-        Optional<EcommUser> buyer = userRepository.findByEmail(order.getCustomerEmail());
-        Cart cart = buyer.map(cartService::getCartByUser).orElse(null);
-
-        boolean inventoryOwned = orderReservationService.finalizeInventoryForPaidOrder(order, cart);
 
         if (buyer.isPresent() && cart != null && !cart.isEmpty()) {
             cartService.clearCart(new CartContext(buyer.get().getUserId(), null));

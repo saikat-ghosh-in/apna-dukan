@@ -24,6 +24,7 @@ public class OrderResponseDTO {
     private final BigDecimal subTotal;
     private final BigDecimal charges;
     private final BigDecimal totalAmount;
+    private final boolean inventoryFinalizationFailed;
 
     private final Instant createdAt;
     private final Instant updatedAt;
