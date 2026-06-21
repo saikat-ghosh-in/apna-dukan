@@ -7,6 +7,7 @@ import { cartReducer } from "./cartReducer";
 import { authReducer } from "./authReducer";
 import { categoryReducer } from "./categoryReducer";
 import { sellerReducer } from "./sellerReducer";
+import { wishlistReducer } from "./wishlistReducer";
 
 const authPersistConfig = {
   key: "auth",
@@ -69,6 +70,7 @@ export const store = configureStore({
     sellers: persistedSellerReducer,
     cart: persistedCartReducer,
     auth: persistedAuthReducer,
+    wishlist: wishlistReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

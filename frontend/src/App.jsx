@@ -16,6 +16,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchCategories } from './reduxStore/actions/categoryActions';
 import { initializeAuth, logOutUser } from './reduxStore/actions/authActions';
 import { syncCartFromBackend } from './reduxStore/actions/cartActions';
+import { fetchWishlistIds } from './reduxStore/actions/wishlistActions';
 import Profile from './components/user/Profile';
 import { SubHeaderProvider } from './components/shared/SubHeaderContext';
 import SubHeaderSlot from './components/shared/SubHeaderSlot';
@@ -30,6 +31,7 @@ import EmailVerificationPending from './components/auth/EmailVerificationPending
 import VerifyEmail from './components/auth/VerifyEmail';
 import ForgotPassword from './components/auth/ForgotPassword';
 import ResetPassword from './components/auth/ResetPassword';
+import Wishlist from './components/wishlist/Wishlist';
 import AccountDeactivated from './components/auth/AccountDeactivated';
 
 function App() {
@@ -58,6 +60,12 @@ function App() {
     dispatch(syncCartFromBackend());
   }, [dispatch]);
 
+  useEffect(() => {
+    if (user?.token) {
+      dispatch(fetchWishlistIds());
+    }
+  }, [user?.token, dispatch]);
+
 
   return (
     <React.Fragment>
@@ -83,6 +91,7 @@ function App() {
 
             <Route path='/' element={<PrivateRoute />}>
               <Route path='/profile' element={<Profile />} />
+              <Route path="/wishlist" element={<Wishlist />} />
               <Route path="/edit-profile" element={<ProfileEdit />} />
               <Route path="/addresses" element={<Addresses />} />
               <Route path='/checkout' element={<Checkout />}>

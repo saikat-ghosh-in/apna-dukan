@@ -12,6 +12,7 @@ import { formatDate } from "../../utils/formatDate";
 import { formatCurrency } from "../../utils/formatCurrency";
 import ProductCard from "./ProductCard";
 import AddToCartControl from "../shared/AddToCartControl";
+import WishlistToggle from "../shared/WishlistToggle";
 import { selectCartItemByProductId } from "../../reduxStore/selectors/cartSelectors";
 import api from "../../backend/api";
 import ImageGallery from "./ImageGallery";
@@ -172,9 +173,12 @@ const ProductDetailsPage = () => {
                             )}
                         </div>
 
-                        <h1 className="text-3xl sm:text-4xl font-black text-gray-950 leading-tight tracking-tight">
-                            {product?.productName}
-                        </h1>
+                        <div className="flex items-start justify-between gap-3">
+                            <h1 className="text-3xl sm:text-4xl font-black text-gray-950 leading-tight tracking-tight">
+                                {product?.productName}
+                            </h1>
+                            <WishlistToggle productId={productId} className="shrink-0 mt-1" />
+                        </div>
 
                         <div className="bg-gray-50 rounded-2xl p-5 space-y-1.5">
                             <div className="flex items-baseline gap-3 flex-wrap">

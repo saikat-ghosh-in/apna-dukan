@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
     MdLogout, MdShoppingBag, MdShoppingCart, MdLocationOn,
-    MdClose, MdEdit, MdCheck, MdLock,
+    MdClose, MdEdit, MdCheck, MdLock, MdFavorite,
     MdVerified, MdWarning, MdStorefront, MdPerson,
     MdAdminPanelSettings, MdContentCopy
 } from "react-icons/md";
@@ -297,6 +297,7 @@ const Profile = () => {
                         <SectionCard title="Quick Links">
                             <div className="space-y-1.5">
                                 <NavButton icon={MdShoppingBag} label="My Orders" onClick={() => navigate("/orders")} />
+                                <NavButton icon={MdFavorite} label="Wishlist" onClick={() => navigate("/wishlist")} />
                                 <NavButton icon={MdShoppingCart} label="My Cart" onClick={() => navigate("/cart")} />
                                 <NavButton icon={MdLocationOn} label="My Addresses" onClick={() => navigate("/addresses")} />
                                 {isAdmin === true && (

@@ -6,6 +6,7 @@ import { HiOutlineTrash } from "react-icons/hi";
 import { addToCart, updateCartItemQuantity, removeFromCart } from "../../reduxStore/actions/cartActions";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { selectCartItemByProductId } from "../../reduxStore/selectors/cartSelectors";
+import WishlistToggle from "../shared/WishlistToggle";
 
 const LOW_STOCK_THRESHOLD = 5;
 
@@ -66,10 +67,14 @@ const ProductCard = ({ product, onClick }) => {
                 )}
 
                 {lowStock && inStock && (
-                    <div className="absolute top-2 right-2 bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    <div className="absolute top-2 right-12 bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
                         Only {qty} left
                     </div>
                 )}
+
+                <div className="absolute top-2 right-2 z-10">
+                    <WishlistToggle productId={product.productId} />
+                </div>
 
                 {!inStock && (
                     <div className="absolute inset-0 bg-white/60 flex items-center justify-center">

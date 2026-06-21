@@ -3,7 +3,7 @@ import { Badge } from "@mui/material";
 import { FiShoppingCart } from "react-icons/fi";
 import {
     MdAdminPanelSettings, MdStorefront, MdMenu, MdClose,
-    MdPerson, MdShoppingBag, MdHome, MdGridView,
+    MdPerson, MdShoppingBag, MdHome, MdGridView, MdFavorite,
 } from "react-icons/md";
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -72,6 +72,7 @@ const Header = () => {
     const profileLinks = [
         { label: "My Profile", icon: MdPerson, route: "/profile" },
         { label: "My Orders", icon: MdShoppingBag, route: "/orders" },
+        { label: "Wishlist", icon: MdFavorite, route: "/wishlist" },
         { label: "My Cart", icon: FiShoppingCart, route: "/cart" },
         ...(isAdmin ? [{ label: "Admin Panel", icon: MdAdminPanelSettings, route: "/admin/dashboard" }] : []),
         ...(isSeller ? [{ label: "My Store", icon: MdStorefront, route: "/seller/dashboard" }] : []),
