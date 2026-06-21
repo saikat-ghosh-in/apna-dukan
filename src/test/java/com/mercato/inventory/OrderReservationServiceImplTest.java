@@ -11,6 +11,7 @@ import com.mercato.Repository.CartReservationRepository;
 import com.mercato.Repository.OrderReservationRepository;
 import com.mercato.Repository.ProductRepository;
 import com.mercato.Service.OrderReservationServiceImpl;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -181,5 +184,32 @@ class OrderReservationServiceImplTest {
         assertEquals(ORDER_QTY, captor.getValue().getReservedQty());
         assertEquals(ORDER_QTY, product.getReservedQty(), "transfer moves hold without net reservedQty change");
         assertTrue(cartReservationDeleted.get());
+    }
+
+    @Test
+    void finalizeInventory_returnsFalseWhenUniqueConstraintRaceIsLost() {
+        AtomicBoolean peerCommitted = new AtomicBoolean(false);
+
+        when(orderReservationRepository.findByOrderLine_Id(LINE_ID))
+                .thenAnswer(inv -> peerCommitted.get()
+                        ? Optional.of(OrderReservation.builder().build())
+                        : Optional.empty());
+        when(orderReservationRepository.save(any(OrderReservation.class)))
+                .thenAnswer(inv -> {
+                    peerCommitted.set(true);
+                    throw new DataIntegrityViolationException(
+                            "duplicate order line reservation",
+                            new ConstraintViolationException(
+                                    "uk_order_reservation_order_line violated",
+                                    null,
+                                    "uk_order_reservation_order_line"
+                            )
+                    );
+                });
+
+        boolean owned = orderReservationService.finalizeInventoryForPaidOrder(order, cart);
+
+        assertFalse(owned);
+        verify(orderReservationRepository, times(1)).save(any(OrderReservation.class));
     }
 }

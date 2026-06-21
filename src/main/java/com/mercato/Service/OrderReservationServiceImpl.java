@@ -14,6 +14,8 @@ import com.mercato.Repository.OrderReservationRepository;
 import com.mercato.Repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,20 +42,65 @@ public class OrderReservationServiceImpl implements OrderReservationService {
 
     @Override
     @Transactional
-    public void finalizeInventoryForPaidOrder(Order order, Cart cart) {
+    public boolean finalizeInventoryForPaidOrder(Order order, Cart cart) {
+        boolean owned = true;
+        boolean anyNeededCreation = false;
+
         for (OrderLine orderLine : order.getOrderLines()) {
             if (orderReservationRepository.findByOrderLine_Id(orderLine.getId()).isPresent()) {
                 releaseOrphanedCartHold(cart, orderLine);
                 continue;
             }
 
-            CartReservation cartReservation = findCartReservation(cart, orderLine);
+            anyNeededCreation = true;
+            if (!createReservationForLine(order, orderLine, cart)) {
+                owned = false;
+            }
+        }
+
+        return anyNeededCreation && owned;
+    }
+
+    private boolean createReservationForLine(Order order, OrderLine orderLine, Cart cart) {
+        CartReservation cartReservation = findCartReservation(cart, orderLine);
+        try {
             if (cartReservation != null) {
                 transferSingleReservation(order, orderLine, cartReservation);
             } else {
                 reserveOrderLine(order, orderLine);
             }
+            return true;
+        } catch (DataIntegrityViolationException ex) {
+            if (!isOrderLineReservationUniqueViolation(ex)) {
+                throw ex;
+            }
+            log.info("Order reservation already created concurrently for order line {}", orderLine.getId());
+            if (orderReservationRepository.findByOrderLine_Id(orderLine.getId()).isEmpty()) {
+                throw ex;
+            }
+            releaseOrphanedCartHold(cart, orderLine);
+            return false;
         }
+    }
+
+    private static boolean isOrderLineReservationUniqueViolation(DataIntegrityViolationException ex) {
+        Throwable current = ex;
+        while (current != null) {
+            if (current instanceof ConstraintViolationException constraintViolation) {
+                String constraintName = constraintViolation.getConstraintName();
+                if (constraintName != null && constraintName.contains("uk_order_reservation_order_line")) {
+                    return true;
+                }
+            }
+            String message = current.getMessage();
+            if (message != null
+                    && (message.contains("uk_order_reservation_order_line")
+                    || message.contains("order_line_fk"))) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private CartReservation findCartReservation(Cart cart, OrderLine orderLine) {

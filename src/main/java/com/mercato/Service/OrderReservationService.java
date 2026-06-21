@@ -13,8 +13,11 @@ public interface OrderReservationService {
     /**
      * Idempotent inventory finalization after payment success (webhook, poll, or duplicate delivery).
      * Ensures exactly one order reservation per line and reconciles orphaned cart holds.
+     *
+     * @return true when this invocation created the order reservations (primary finalizer);
+     *         false when inventory was already finalized or a concurrent peer won the insert race
      */
-    void finalizeInventoryForPaidOrder(Order order, Cart cart);
+    boolean finalizeInventoryForPaidOrder(Order order, Cart cart);
 
     void settleQty(OrderLine orderLine, int qty, OrderLineAction action);
 }
